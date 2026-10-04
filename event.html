@@ -73,7 +73,7 @@
         <p>${esc(e.venue)}</p>
       </section>
       <div class="past cafe-photos">
-        ${cafe.map((src, i) => `<a class="cafe-photos__item" href="${esc(src)}" target="_blank" rel="noopener" aria-label="café photo ${i + 1}"><div class="past__photo placeholder"${LD.photoStyle(src)}></div></a>`).join('')}
+        ${cafe.map((src, i) => `<div class="cafe-photos__item" role="img" aria-label="café photo ${i + 1}"><div class="past__photo placeholder"${LD.photoStyle(src)}></div></div>`).join('')}
       </div>` : ''}
 
       <section class="block">

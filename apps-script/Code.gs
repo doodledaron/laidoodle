@@ -286,28 +286,54 @@ function photoList_(cell) {
 
 function folderImages_(id) {
   const cache = CacheService.getScriptCache();
-  const hit = cache.get('folder:' + id);
+  const hit = cache.get('photos-v2:' + id);
   if (hit) return JSON.parse(hit);
   const files = [];
   try {
     const it = DriveApp.getFolderById(id).getFiles();
     while (it.hasNext()) {
       const f = it.next();
-      if (String(f.getMimeType()).indexOf('image/') === 0) files.push({ name: f.getName(), id: f.getId() });
+      if (String(f.getMimeType()).indexOf('image/') !== 0) continue;
+      makeViewable_(f);
+      files.push({ name: f.getName(), id: f.getId() });
     }
   } catch (err) {
     return []; // wrong link or no access: show no photos rather than break the page
   }
   const urls = files.sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }))
-    .map(f => 'https://lh3.googleusercontent.com/d/' + f.id);
-  cache.put('folder:' + id, JSON.stringify(urls), 600);
+    .map(f => driveImage_(f.id));
+  cache.put('photos-v2:' + id, JSON.stringify(urls), 600);
   return urls;
 }
 
 // Google Drive share links → direct image URLs (the file must be shared as "anyone with the link").
+// Single Drive files are also switched to "anyone with the link" (checked once every 6 hours).
 function imageUrl_(url) {
   const m = String(url).match(/drive\.google\.com\/(?:file\/d\/|open\?id=|uc\?(?:export=\w+&)?id=)([\w-]+)/);
-  return m ? 'https://lh3.googleusercontent.com/d/' + m[1] : String(url).trim();
+  if (!m) return String(url).trim();
+  const cache = CacheService.getScriptCache();
+  if (!cache.get('viewable:' + m[1])) {
+    try { makeViewable_(DriveApp.getFileById(m[1])); } catch (err) { /* not yours or no access */ }
+    cache.put('viewable:' + m[1], '1', 21600);
+  }
+  return driveImage_(m[1]);
+}
+
+// Visitors' browsers can only load a Drive image that is shared as "anyone with the link".
+// Photo files are set that way here, so you don't have to share each one by hand.
+// (Only photo files and the payment QR pass through this. Receipts never do.)
+function makeViewable_(file) {
+  try {
+    const access = file.getSharingAccess();
+    if (access !== DriveApp.Access.ANYONE && access !== DriveApp.Access.ANYONE_WITH_LINK) {
+      file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+    }
+  } catch (err) { /* e.g. a work/school account that blocks public sharing */ }
+}
+
+// =w1600 asks Google for a resized JPEG/PNG: loads fast and also works for iPhone HEIC photos.
+function driveImage_(id) {
+  return 'https://lh3.googleusercontent.com/d/' + id + '=w1600';
 }
 
 function json_(obj) {

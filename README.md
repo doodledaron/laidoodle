@@ -60,7 +60,7 @@ Changes show up on the site the next time someone loads the page. No redeploys.
 | `extra_questions` | extra questions just for this jam, one per line | `dietary needs?` |
 | `doodlers` | only for old jams from before sign-ups were in the sheet; otherwise leave it empty and it counts sign-ups | `9` |
 
-- **Photo folders:** share each folder as *anyone with the link*. New photos you drop into a folder show up on the site within ~10 minutes.
+- **Photo folders:** just paste the folder link. The script switches each photo in it to *anyone with the link* so visitors can see it (your receipts folder is never touched). New photos you drop into a folder show up on the site within ~10 minutes.
 - **Add a jam:** add a row.
 - **Edit:** change the cell.
 - **Remove:** set `status` to `hidden` (better than deleting the row, because the sign-ups keep their link to it).
