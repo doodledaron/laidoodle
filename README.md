@@ -59,6 +59,7 @@ Changes show up on the site the next time someone loads the page. No redeploys.
 | `cafe_photos` | photos for the "the café" section: a Drive folder link, or image links one per line. Leave empty to hide the section. | |
 | `extra_questions` | extra questions just for this jam, one per line | `dietary needs?` |
 | `doodlers` | only for old jams from before sign-ups were in the sheet; otherwise leave it empty and it counts sign-ups | `9` |
+| `thumbnail` | the cover picture on the home page's upcoming list and past jams: one Drive image link (a folder link uses its first image). Optional: without it, upcoming jams show no picture and past jams use the first of `photos`. | |
 
 - **Photo folders:** just paste the folder link. The script switches each photo in it to *anyone with the link* so visitors can see it (your receipts folder is never touched). New photos you drop into a folder show up on the site within ~10 minutes.
 - **Add a jam:** add a row.

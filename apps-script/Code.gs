@@ -18,7 +18,7 @@ const CANCELLED_COL = 'isCancelled? (Y/N)';
 const EVENT_HEADERS = [
   'id', HIDDEN_COL, 'short_title', 'title', 'date', 'start_time', 'end_time',
   'venue_short', 'venue', 'map_url', 'fee', 'fee_includes', 'capacity',
-  'photos', 'cafe_photos', 'extra_questions', 'doodlers',
+  'photos', 'cafe_photos', 'extra_questions', 'doodlers', 'thumbnail',
 ];
 
 const SIGNUP_HEADERS = [
@@ -53,7 +53,7 @@ function setup() {
       ['jam-03', '', '#03 rainy café', 'rainy café', '2025-09-21', '2pm', '5pm', 'café', 'café', '', 0, '', 8, '', '', '', 6],
     ].forEach(v => {
       const o = {};
-      EVENT_HEADERS.forEach((k, n) => { o[key_(k)] = v[n]; });
+      EVENT_HEADERS.forEach((k, n) => { o[key_(k)] = v[n] === undefined ? '' : v[n]; });
       o.is_hidden = 'N';
       appendByHeader_(events, o); // by column name, so it works whatever order the columns are in
     });
@@ -165,6 +165,7 @@ function toEvent_(r, taken, tz) {
     feeIncludes: String(r.fee_includes || '').trim(),
     photos: photoList_(r.photos),
     cafePhotos: photoList_(r.cafe_photos),
+    thumbnail: photoList_(r.thumbnail)[0] || '', // one image link (or a folder: its first image)
     extraQuestions: lines_(r.extra_questions),
     doodlers: r.doodlers === '' ? taken : Number(r.doodlers),
   };

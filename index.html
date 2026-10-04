@@ -94,7 +94,8 @@
     list.innerHTML = upcoming.length ? upcoming.map(e => {
       const p = LD.parts(e);
       return `
-        <div class="event-row">
+        <div class="event-row${e.thumbnail ? ' event-row--thumb' : ''}">
+          ${e.thumbnail ? `<a class="event-row__thumb placeholder" href="event.html?id=${esc(e.id)}" aria-label="${esc(e.shortTitle)}"${LD.photoStyle(e.thumbnail)}></a>` : ''}
           <a class="event-row__date" href="event.html?id=${esc(e.id)}">
             <div class="event-row__mon">${p.mon}</div>
             <div class="event-row__day">${p.day}</div>
@@ -113,7 +114,7 @@
       const p = LD.parts(j);
       return `
         <a class="past__item" href="event.html?id=${esc(j.id)}">
-          <div class="past__photo placeholder"${LD.photoStyle(j.photos[0])}>${j.photos[0] ? '' : 'jam photo'}</div>
+          <div class="past__photo placeholder"${LD.photoStyle(j.thumbnail || j.photos[0])}>${j.thumbnail || j.photos[0] ? '' : 'jam photo'}</div>
           <div class="past__title">${esc(j.shortTitle)}</div>
           <div class="past__meta">${p.monTitle} ${p.dayNum} · ${j.doodlers} doodlers</div>
         </a>`;
