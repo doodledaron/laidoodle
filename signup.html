@@ -78,6 +78,7 @@
           <div class="fee-card__name" id="fee-name"></div>
           <div class="fee-card__amount" id="fee-amount"></div>
           <div class="fee-card__bank" id="fee-includes" hidden></div>
+          <div class="cost-remark" id="fee-remark" hidden></div>
           <div class="fee-card__qr placeholder" id="fee-qr">payment QR</div>
           <div class="qr-actions" id="qr-actions" hidden>
             <button type="button" class="qr-btn" id="qr-expand">⤢ enlarge</button>
@@ -174,6 +175,7 @@
       document.getElementById('fee-name').textContent = e.shortTitle;
       document.getElementById('fee-amount').textContent = `RM ${e.fee}`;
       if (e.feeIncludes) Object.assign(document.getElementById('fee-includes'), { hidden: false, textContent: `includes ${e.feeIncludes}` });
+      if (e.costRemark) Object.assign(document.getElementById('fee-remark'), { hidden: false, textContent: `＋ ${e.costRemark}` });
       document.getElementById('fee-bank').textContent = settings.bankText;
       if (settings.paymentQr) setupQr(settings.paymentQr);
     } else {

@@ -13,10 +13,10 @@ window.LAIDOODLE = {
       paymentQr: '',
     },
     events: [
-      { id: 'jam-05', shortTitle: 'Doodle Jam #05', title: 'autumn leaves & lemon tea', date: '2026-11-14', dayLabel: 'Sat', timeShort: '2pm', timeRange: '2–5pm', venueShort: 'café TBD', venue: 'café name, street', mapUrl: '', fee: 10, feeIncludes: '1 drink', capacity: 8, spotsLeft: 4, photos: [], cafePhotos: [], extraQuestions: [], doodlers: 4, thumbnail: '' },
-      { id: 'winter-zine', shortTitle: 'Winter zine jam', title: 'winter zine jam', date: '2026-12-06', dayLabel: 'Sun', timeShort: '3pm', timeRange: '3–6pm', venueShort: 'café TBD', venue: 'café TBD', mapUrl: '', fee: 0, capacity: 8, spotsLeft: 8, photos: [], cafePhotos: [], extraQuestions: ['which part of town works best for u?'], doodlers: 0, thumbnail: '' },
-      { id: 'jam-04', shortTitle: '#04 picnic edition', title: 'picnic edition', date: '2025-10-12', dayLabel: 'Sun', timeShort: '2pm', timeRange: '2–5pm', venueShort: 'park', venue: 'park', mapUrl: '', fee: 0, capacity: 10, spotsLeft: 1, photos: [], cafePhotos: [], extraQuestions: [], doodlers: 9, thumbnail: '' },
-      { id: 'jam-03', shortTitle: '#03 rainy café', title: 'rainy café', date: '2025-09-21', dayLabel: 'Sun', timeShort: '2pm', timeRange: '2–5pm', venueShort: 'café', venue: 'café', mapUrl: '', fee: 0, capacity: 8, spotsLeft: 2, photos: [], cafePhotos: [], extraQuestions: [], doodlers: 6, thumbnail: '' },
+      { id: 'jam-05', shortTitle: 'Doodle Jam #05', title: 'autumn leaves & lemon tea', date: '2026-11-14', dayLabel: 'Sat', timeShort: '2pm', timeRange: '2–5pm', venueShort: 'café TBD', venue: 'café name, street', mapUrl: '', fee: 10, feeIncludes: '1 drink', capacity: 8, spotsLeft: 4, photos: [], cafePhotos: [], extraQuestions: [], doodlers: 4, thumbnail: '', costRemark: '' },
+      { id: 'winter-zine', shortTitle: 'Winter zine jam', title: 'winter zine jam', date: '2026-12-06', dayLabel: 'Sun', timeShort: '3pm', timeRange: '3–6pm', venueShort: 'café TBD', venue: 'café TBD', mapUrl: '', fee: 0, capacity: 8, spotsLeft: 8, photos: [], cafePhotos: [], extraQuestions: ['which part of town works best for u?'], doodlers: 0, thumbnail: '', costRemark: '' },
+      { id: 'jam-04', shortTitle: '#04 picnic edition', title: 'picnic edition', date: '2025-10-12', dayLabel: 'Sun', timeShort: '2pm', timeRange: '2–5pm', venueShort: 'park', venue: 'park', mapUrl: '', fee: 0, capacity: 10, spotsLeft: 1, photos: [], cafePhotos: [], extraQuestions: [], doodlers: 9, thumbnail: '', costRemark: '' },
+      { id: 'jam-03', shortTitle: '#03 rainy café', title: 'rainy café', date: '2025-09-21', dayLabel: 'Sun', timeShort: '2pm', timeRange: '2–5pm', venueShort: 'café', venue: 'café', mapUrl: '', fee: 0, capacity: 8, spotsLeft: 2, photos: [], cafePhotos: [], extraQuestions: [], doodlers: 6, thumbnail: '', costRemark: '' },
     ],
   },
 };

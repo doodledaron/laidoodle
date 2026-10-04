@@ -63,7 +63,7 @@
       <div class="info">
         <div class="info__row"><span class="info__label">when</span><span class="info__value">${esc(e.dayLabel)}, ${p.monTitle} ${p.dayNum} · ${esc(e.timeRange)}</span></div>
         <div class="info__row"><span class="info__label">where</span><span class="info__value">${esc(e.venue)}${map}</span></div>
-        <div class="info__row"><span class="info__label">cost</span><span class="info__value">${cost}</span></div>
+        <div class="info__row"><span class="info__label">cost</span><span class="info__value">${cost}${e.costRemark ? `<span class="cost-remark">＋ ${esc(e.costRemark)}</span>` : ''}</span></div>
         <div class="info__row"><span class="info__label">spots</span><span class="spots"><span style="width:${pct}%"></span></span><span style="font-size:14px">${e.capacity ? `${taken}/${e.capacity}` : taken}</span></div>
       </div>
 

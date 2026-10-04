@@ -54,6 +54,7 @@ Changes show up on the site the next time someone loads the page. No redeploys.
 | `map_url` | Google Maps link (optional) | |
 | `fee` | RM amount. `0` = free: the site says *"just order something at the café"* and the payment step is skipped | `10` |
 | `fee_includes` | paid jams only: what the fee covers, shown as "RM 10 · includes …" | `1 drink + snacks` |
+| `cost_remark` | optional free text shown under the cost (event page + payment step), for anything extra | `another RM 10 will be collected at the café for food` |
 | `capacity` | max people. Spots left are counted automatically. | `8` |
 | `photos` | event photos, shown at the top of a **past** jam's page (not used on upcoming jams): a Google Drive **folder** link (every image in it is shown, A→Z by file name), or single image links one per line | |
 | `cafe_photos` | café photos: a Drive folder link, or image links one per line. **Upcoming** jams show them as the swipe photos at the top of the page; **past** jams show them in a "the café" section below (hidden if empty). | |

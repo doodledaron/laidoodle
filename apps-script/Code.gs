@@ -18,7 +18,7 @@ const CANCELLED_COL = 'isCancelled? (Y/N)';
 const EVENT_HEADERS = [
   'id', HIDDEN_COL, 'short_title', 'title', 'date', 'start_time', 'end_time',
   'venue_short', 'venue', 'map_url', 'fee', 'fee_includes', 'capacity',
-  'photos', 'cafe_photos', 'extra_questions', 'doodlers', 'thumbnail',
+  'photos', 'cafe_photos', 'extra_questions', 'doodlers', 'thumbnail', 'cost_remark',
 ];
 
 const SIGNUP_HEADERS = [
@@ -166,6 +166,7 @@ function toEvent_(r, taken, tz) {
     capacity: capacity,
     spotsLeft: Math.max(0, capacity - taken),
     feeIncludes: String(r.fee_includes || '').trim(),
+    costRemark: String(r.cost_remark || '').trim(), // free text, e.g. "another RM 10 will be collected at the café"
     photos: photoList_(r.photos),
     cafePhotos: photoList_(r.cafe_photos),
     thumbnail: photoList_(r.thumbnail)[0] || '', // one image link (or a folder: its first image)
@@ -257,6 +258,7 @@ function notifyHost_(ss, event, s) {
       ['receipt', s.receipt ? 'open receipt' : '', s.receipt],
       ['anything to know', s.notes],
       ['extra answers', s.extra_answers],
+      ['cost note', event.costRemark],
       ['spots left', left + ' / ' + event.capacity],
     ].filter(r => String(r[1]).trim());
     const html = '<div style="font-family:sans-serif;font-size:15px;color:#1d1d1d">' +
