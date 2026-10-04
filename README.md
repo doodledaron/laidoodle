@@ -9,7 +9,7 @@ Live at **https://doodledaron.github.io/laidoodle/**
 ```
  the site (GitHub Pages)  ── reads jams ──▶  Apps Script  ◀──▶  your Google Sheet
  index / event / signup   ── sends sign-ups ─▶ (Code.gs)          Events | Signups | Settings
-                                                      └─ receipts ──▶ Drive folder "laidoodle receipts"
+                                                      └─ receipts ──▶ your Drive receipts folder
 ```
 
 - **The Google Sheet is your admin panel.** You never need to edit code to run jams.
@@ -23,7 +23,7 @@ Live at **https://doodledaron.github.io/laidoodle/**
 1. Create a new Google Sheet (name it e.g. `laidoodle`).
 2. **Extensions → Apps Script**. Delete what's there, paste in everything from [`apps-script/Code.gs`](apps-script/Code.gs), and press 💾 Save.
 3. In the function dropdown at the top, pick **`setup`** and press **Run**. Google asks for permission: choose your account → *Advanced* → *Go to … (unsafe)* → *Allow*. (It says "unsafe" because the script is yours and not verified by Google. It only touches this sheet and its own Drive folder.)
-   This creates the **Events**, **Signups** and **Settings** tabs (with sample jams), plus a Drive folder called **laidoodle receipts**.
+   This creates the **Events**, **Signups** and **Settings** tabs (with sample jams). Running it again later is safe: it only adds what's missing.
 4. **Deploy → New deployment** → ⚙️ type **Web app**:
    - Execute as: **Me**
    - Who has access: **Anyone**
@@ -65,7 +65,7 @@ Changes show up on the site the next time someone loads the page. No redeploys.
 
 ### Sign-ups (Signups tab)
 
-A row is added for each person who signs up. If they upload a receipt, the `receipt` column links to the file in Drive.
+A row is added for each person who signs up. If they upload a receipt, it's saved in your receipts folder as **`name - date time`** (e.g. `Ron - 2026-10-04 15.30.12.png`, same time as the `timestamp` column), and the `receipt` column links to it.
 
 - **Someone cancels:** type `cancelled` in their `status` cell and the spot opens up again.
 - You can add your own columns (e.g. `confirmed`, `notes to self`). The script only fills in its own columns and leaves yours alone.
@@ -78,6 +78,7 @@ A row is added for each person who signs up. If they upload a receipt, the `rece
 | `host_instagram` | `@doodledaron` |
 | `bank_text` | shown under the QR on the payment step |
 | `payment_qr` | Drive link to your payment QR image (shared as *anyone with the link*) |
+| `receipt_folder` | Drive folder link where receipts are saved. Keep this folder's sharing **Restricted**: receipts have people's names and bank details. |
 
 ### If you edit `Code.gs` later
 

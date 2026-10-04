@@ -4,7 +4,7 @@
  * Tabs:
  *   Events   – one row per jam. Set status to "hidden" to take one off the site.
  *   Signups  – filled in automatically. Add your own columns freely; set status to "cancelled" to free up a spot.
- *   Settings – host_instagram, bank_text, payment_qr.
+ *   Settings – host_instagram, bank_text, payment_qr, receipt_folder (where receipts are saved).
  *
  * First time: run setup() once, then Deploy → New deployment → Web app
  *   (Execute as: Me, Who has access: Anyone) and put the URL into data.js → apiUrl.
@@ -28,9 +28,11 @@ const SETTINGS_ROWS = [
   ['host_instagram', '@doodledaron'],
   ['bank_text', 'or bank transfer: account details'],
   ['payment_qr', ''],
+  ['receipt_folder', 'https://drive.google.com/drive/folders/1mKrXlb5sxRFExk9kNA22RzQjDfi9W45D'],
 ];
 
-const RECEIPT_FOLDER = 'laidoodle receipts';
+// Used when the Settings tab has no receipt_folder row.
+const DEFAULT_RECEIPT_FOLDER_ID = '1mKrXlb5sxRFExk9kNA22RzQjDfi9W45D';
 const MAX_RECEIPT_BYTES = 5 * 1024 * 1024;
 
 // ---------- one-time setup ----------
@@ -53,9 +55,10 @@ function setup() {
   signups.getRange('F:F').setNumberFormat('@'); // keep "+60…" phone numbers as text
 
   const settings = ensureSheet_(ss, 'Settings', ['key', 'value']);
-  if (settings.getLastRow() === 1) settings.getRange(2, 1, SETTINGS_ROWS.length, 2).setValues(SETTINGS_ROWS);
+  const keys = settings.getDataRange().getValues().map(r => String(r[0]).trim());
+  SETTINGS_ROWS.filter(r => keys.indexOf(r[0]) === -1).forEach(r => settings.appendRow(r)); // only adds missing rows
 
-  receiptFolder_();
+  receiptFolder_(ss); // fails here (not at sign-up time) if the folder can't be reached
   SpreadsheetApp.getUi().alert('laidoodle is set up ✎ Now: Deploy → New deployment → Web app.');
 }
 
@@ -69,15 +72,19 @@ function ensureSheet_(ss, name, headers) {
   return sheet;
 }
 
-function receiptFolder_() {
-  const props = PropertiesService.getScriptProperties();
-  const id = props.getProperty('RECEIPT_FOLDER_ID');
-  if (id) {
-    try { return DriveApp.getFolderById(id); } catch (err) { /* folder was deleted, make a new one */ }
-  }
-  const folder = DriveApp.createFolder(RECEIPT_FOLDER);
-  props.setProperty('RECEIPT_FOLDER_ID', folder.getId());
-  return folder;
+// Settings → receipt_folder (a Drive folder link or ID), else the default above.
+function receiptFolder_(ss) {
+  const value = String(settingsMap_(ss).receipt_folder || '').trim();
+  const m = value.match(/folders\/([\w-]+)|[?&]id=([\w-]+)/);
+  const id = m ? (m[1] || m[2]) : (value || DEFAULT_RECEIPT_FOLDER_ID);
+  return DriveApp.getFolderById(id);
+}
+
+// "Ron - 2026-10-04 15.30.12.png": who + when, keeping the file's extension.
+function receiptName_(person, original, when, tz) {
+  const who = String(person).replace(/[\\/:*?"<>|\n\r\t]+/g, '-').trim() || 'someone';
+  const ext = (String(original).match(/\.[A-Za-z0-9]{1,5}$/) || [''])[0].toLowerCase();
+  return who + ' - ' + Utilities.formatDate(when, tz, 'yyyy-MM-dd HH.mm.ss') + ext;
 }
 
 // ---------- GET: events for the site (never returns sign-up details) ----------
@@ -143,17 +150,18 @@ function doPost(e) {
     if (event.spotsLeft <= 0) return json_({ ok: false, error: 'full' });
     if (event.fee > 0 && (!body.paid || !body.agree_fee)) return json_({ ok: false, error: 'invalid' });
 
+    const now = new Date();
     let receipt = '';
     if (event.fee > 0 && body.receipt && body.receipt.data) {
       const bytes = Utilities.base64Decode(body.receipt.data);
       if (bytes.length > MAX_RECEIPT_BYTES) return json_({ ok: false, error: 'receipt_too_big' });
-      const name = [event.id, body.name, body.receipt.name || 'receipt'].join(' - ');
-      receipt = receiptFolder_().createFile(Utilities.newBlob(bytes, body.receipt.type || 'application/octet-stream', name)).getUrl();
+      const name = receiptName_(body.name, body.receipt.name, now, tz);
+      receipt = receiptFolder_(ss).createFile(Utilities.newBlob(bytes, body.receipt.type || 'application/octet-stream', name)).getUrl();
     }
 
     const extra = (body.extra || []).map(x => x.q + ': ' + (x.a || '')).join('\n');
     appendByHeader_(ss.getSheetByName('Signups'), {
-      timestamp: new Date(),
+      timestamp: now,
       event_id: event.id,
       event: event.shortTitle,
       name: body.name,
@@ -187,9 +195,15 @@ function readRows_(sheet) {
   });
 }
 
-function readSettings_(ss) {
+function settingsMap_(ss) {
   const s = {};
   ss.getSheetByName('Settings').getDataRange().getValues().slice(1).forEach(r => { s[String(r[0]).trim()] = r[1]; });
+  return s;
+}
+
+// Only these settings are sent to the site (receipt_folder stays private).
+function readSettings_(ss) {
+  const s = settingsMap_(ss);
   return {
     hostInstagram: String(s.host_instagram || ''),
     bankText: String(s.bank_text || ''),
