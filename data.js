@@ -3,6 +3,11 @@
 window.LAIDOODLE = {
   // Your Apps Script web-app URL (Deploy → Manage deployments → Web app URL, ends in /exec).
   // While this is empty the site shows the sample jams below and sign-ups are NOT saved.
+  // prod (https://doodledaron.github.io/laidoodle/) uses apiUrl.
+  // UAT (…/laidoodle/uat/, built from the uat branch) uses uatApiUrl instead: point it at a COPY of your
+  // sheet so test sign-ups never land in the real one. Empty = UAT shows sample jams and saves nothing.
+  uatApiUrl: '',
+
   apiUrl: 'https://script.google.com/macros/s/AKfycbzu8hKQmmFOYPWd5bSI0vTuIKkAdCfVfolW63p57DgNaPTthDw_V73R5tNPegy6-u2j/exec',
 
   // Sample data, used only while apiUrl is empty. Same shape as what the sheet returns.
@@ -24,6 +29,15 @@ window.LAIDOODLE = {
 // Small helpers shared by every page.
 // The site's root, worked out from where this file lives, so links work from any folder.
 const LD_ROOT = new URL('./', document.currentScript.src).href;
+
+// UAT = the test copy of the site, served from …/laidoodle/uat/ (see .github/workflows/deploy.yml)
+const LD_UAT = /\/uat\/$/.test(new URL(LD_ROOT).pathname);
+if (LD_UAT) {
+  window.LAIDOODLE.apiUrl = window.LAIDOODLE.uatApiUrl;
+  document.head.insertAdjacentHTML('beforeend', '<meta name="robots" content="noindex">');
+  document.addEventListener('DOMContentLoaded', () => document.body.insertAdjacentHTML('afterbegin',
+    `<div class="uat-ribbon">UAT · test site${window.LAIDOODLE.apiUrl ? ' · test sheet' : ' · sample data, nothing is saved'}</div>`));
+}
 
 window.LD = {
   // Every internal link goes through here: /laidoodle/, /laidoodle/jam/?id=…, /laidoodle/join/?id=…

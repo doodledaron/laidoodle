@@ -100,6 +100,22 @@ The live site keeps using the old version until you run **Deploy → Manage depl
 
 ---
 
+## Prod and UAT (testing)
+
+| branch | site | uses |
+| --- | --- | --- |
+| `main` | https://doodledaron.github.io/laidoodle/ | your real sheet (`apiUrl` in `data.js`) |
+| `uat` | https://doodledaron.github.io/laidoodle/uat/ | a test copy of the sheet (`uatApiUrl`), or sample data if that's empty |
+
+- Try changes on `uat` first. When they look good, merge `uat` into `main`.
+- Both sites come from the same code. The UAT site spots that it's under `/uat/`, uses `uatApiUrl`, shows a yellow **UAT** ribbon, and hides itself from search engines.
+- `.github/workflows/deploy.yml` publishes both branches whenever either one changes. One-time setup: **Settings → Pages → Source → GitHub Actions**.
+- **Test sheet:** in your real sheet, use **File → Make a copy**. The copy includes the script. In the copy:
+  1. In Settings, point `receipt_folder` at a test folder.
+  2. Run `setup`.
+  3. Deploy it as a web app.
+  4. Put that `/exec` URL in `uatApiUrl`.
+
 ## Files
 
 | file | what |

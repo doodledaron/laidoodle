@@ -1,0 +1,61 @@
+# Publishes the site to GitHub Pages:
+#   main → https://doodledaron.github.io/laidoodle/      (prod)
+#   uat  → https://doodledaron.github.io/laidoodle/uat/  (testing)
+# A push to either branch rebuilds both, so each always shows its branch's latest commit.
+# One-time: repo Settings → Pages → Source: "GitHub Actions".
+name: deploy
+
+on:
+  push:
+    branches: [main, uat]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Get main (prod)
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          path: prod
+
+      - name: Get uat (testing)
+        uses: actions/checkout@v4
+        with:
+          ref: uat
+          path: uat
+        continue-on-error: true   # fine if the uat branch doesn't exist
+
+      - name: Put the site together
+        run: |
+          mkdir -p _site
+          rsync -a --exclude .git --exclude .github --exclude apps-script --exclude README.md prod/ _site/
+          if [ -d uat ]; then
+            mkdir -p _site/uat
+            rsync -a --exclude .git --exclude .github --exclude apps-script --exclude README.md uat/ _site/uat/
+          fi
+          touch _site/.nojekyll
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
