@@ -33,7 +33,7 @@ const SETTINGS_ROWS = [
   ['payment_qr', ''],
   ['receipt_folder', 'https://drive.google.com/drive/folders/1mKrXlb5sxRFExk9kNA22RzQjDfi9W45D'],
   ['notify_email', ''], // filled with your own email by setup(); "off" turns sign-up emails off
-  ['host_whatsapp', ''], // your WhatsApp number, shown in the confirmation email, e.g. +60 12-345 6789
+  ['host_whatsapp', '011 39214061'], // your WhatsApp, in the confirmation email ("ask me anything"); "off" hides it
 ];
 
 // Used when the Settings tab has no receipt_folder row.
@@ -69,9 +69,13 @@ function setup() {
   signups.getRange('F:F').setNumberFormat('@'); // keep "+60…" phone numbers as text
 
   const settings = ensureSheet_(ss, 'Settings', ['key', 'value']);
-  const keys = settings.getDataRange().getValues().map(r => String(r[0]).trim());
-  SETTINGS_ROWS.filter(r => keys.indexOf(r[0]) === -1).forEach(r => {           // only adds missing rows
-    settings.appendRow(r[0] === 'notify_email' ? [r[0], Session.getEffectiveUser().getEmail()] : r);
+  const current = settings.getDataRange().getValues();
+  const keys = current.map(r => String(r[0]).trim());
+  SETTINGS_ROWS.forEach(r => {
+    const value = r[0] === 'notify_email' ? Session.getEffectiveUser().getEmail() : r[1];
+    const i = keys.indexOf(r[0]);
+    if (i === -1) settings.appendRow([r[0], value]);                                   // add missing rows
+    else if (r[0] === 'host_whatsapp' && !String(current[i][1]).trim()) settings.getRange(i + 1, 2).setValue(value); // fill an empty one
   });
 
   receiptFolder_(ss); // fails here (not at sign-up time) if the folder can't be reached
@@ -256,7 +260,7 @@ function notifyHost_(ss, event, s) {
       ['jam', event.shortTitle + ' · ' + event.dayLabel + ' ' + event.date + ' ' + event.timeShort],
       ['name', s.name],
       ['instagram', '@' + ig, 'https://instagram.com/' + encodeURIComponent(ig)],
-      ['phone / whatsapp', s.phone, 'https://wa.me/' + String(s.phone).replace(/\D/g, '')],
+      ['phone / whatsapp', s.phone, waLink_(s.phone)],
       ['email', s.email, 'mailto:' + s.email],
       ['how doodly', s.doodly],
       ['paid', s.paid],
@@ -303,8 +307,7 @@ function confirmToDoodler_(ss, event, s) {
   try {
     const st = settingsMap_(ss);
     const ig = String(st.host_instagram || '').trim();
-    const wa = String(st.host_whatsapp || '').trim();
-    const waDigits = wa.replace(/\D/g, '');
+    const wa = /^(off|no|none)$/i.test(String(st.host_whatsapp || '').trim()) ? '' : String(st.host_whatsapp || '').trim();
     const host = String(st.notify_email || '').trim();
     const when = event.dayLabel + ', ' + longDate_(event.date) + ' · ' + event.timeRange;
     let cost = event.fee > 0 ? 'RM ' + event.fee + (event.feeIncludes ? ' · includes ' + event.feeIncludes : ' commitment fee') + (s.paid === 'yes' ? ' (paid ✓)' : '')
@@ -319,7 +322,7 @@ function confirmToDoodler_(ss, event, s) {
       ['bring', 'your own pens / markers / pencils / crayons (no watercolors or anything messy please)'],
     ];
     const contact = [];
-    if (wa) contact.push(['WhatsApp', wa, 'https://wa.me/' + waDigits]);
+    if (wa) contact.push(['WhatsApp', wa, waLink_(wa)]);
     if (ig) contact.push(['IG', ig, 'https://instagram.com/' + encodeURIComponent(ig.replace(/^@/, ''))]);
     const contactText = contact.map(c => c[0] + ' ' + c[1]).join(' or ') || 'DM me';
 
@@ -331,13 +334,16 @@ function confirmToDoodler_(ss, event, s) {
       '<table cellpadding="6" style="border-collapse:collapse;background:#f5eedc;border-radius:10px">' +
       details.map(r => '<tr><td style="color:#888;vertical-align:top">' + r[0] + '</td><td>' + link(r) + '</td></tr>').join('') +
       '</table>' +
-      '<p style="margin:16px 0 0"><b>can\'t make it?</b> please let me know so someone else can take ur spot: ' +
+      '<p style="margin:16px 0 0"><b>questions? ask me anything</b> on ' +
+      (contact.length ? contact.map(c => c[0] + ' ' + link(c)).join(' or ') : 'IG') + ' ✎</p>' +
+      '<p style="margin:10px 0 0"><b>can\'t make it?</b> please let me know so someone else can take ur spot: ' +
       (contact.length ? contact.map(c => c[0] + ' ' + link(c)).join(' or ') : 'DM me') + '.</p>' +
       '<p style="margin:10px 0 0;color:#666">if the date or venue changes, i\'ll let u know on WhatsApp or IG.</p>' +
       '<p style="margin:16px 0 0">see u soon,<br>laidoodle 来涂鸦</p></div>';
     const text = 'hi ' + s.name + ", u're in! ✎\n\nsee u at " + event.shortTitle + '.\n\n' +
       details.map(r => r[0] + ': ' + r[1] + (r[2] ? ' (' + r[2] + ')' : '')).join('\n') +
-      "\n\ncan't make it? please let me know so someone else can take ur spot: " + contactText + '.' +
+      '\n\nquestions? ask me anything on ' + contactText + ' ✎' +
+      "\ncan't make it? please let me know so someone else can take ur spot: " + contactText + '.' +
       "\nif the date or venue changes, i'll let u know on WhatsApp or IG.\n\nsee u soon,\nlaidoodle 来涂鸦";
     const mail = {
       to: s.email,
@@ -351,6 +357,13 @@ function confirmToDoodler_(ss, event, s) {
   } catch (err) {
     console.error('confirmation email failed: ' + err);
   }
+}
+
+// WhatsApp chat link. Local Malaysian numbers ("011 3921 4061") get the 60 country code.
+function waLink_(phone) {
+  let d = String(phone).replace(/\D/g, '');
+  if (/^0\d{8,10}$/.test(d)) d = '60' + d.slice(1);
+  return 'https://wa.me/' + d;
 }
 
 function isEmail_(v) {

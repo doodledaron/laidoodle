@@ -8,8 +8,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;700&family=Patrick+Hand&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css?v=202610041011">
-<script src="data.js?v=202610041011"></script>
+<link rel="stylesheet" href="styles.css?v=202610041237">
+<script src="data.js?v=202610041237"></script>
 </head>
 <body>
 <main class="screen form-screen" id="app">
@@ -85,7 +85,7 @@
           <div class="fee-card__name" id="fee-name"></div>
           <div class="fee-card__amount" id="fee-amount"></div>
           <div class="fee-card__bank" id="fee-includes" hidden></div>
-          <div class="cost-remark" id="fee-remark" hidden></div>
+          <div class="fee-remark" id="fee-remark" hidden></div>
           <div class="fee-card__qr placeholder" id="fee-qr">payment QR</div>
           <div class="qr-actions" id="qr-actions" hidden>
             <button type="button" class="qr-btn" id="qr-expand">⤢ enlarge</button>
@@ -183,7 +183,7 @@
       document.getElementById('fee-name').textContent = e.shortTitle;
       document.getElementById('fee-amount').textContent = `RM ${e.fee}`;
       if (e.feeIncludes) Object.assign(document.getElementById('fee-includes'), { hidden: false, textContent: `includes ${e.feeIncludes}` });
-      if (e.costRemark) Object.assign(document.getElementById('fee-remark'), { hidden: false, textContent: `＋ ${e.costRemark}` });
+      if (e.costRemark) Object.assign(document.getElementById('fee-remark'), { hidden: false, textContent: `⚠️ heads up: ${e.costRemark}` });
       document.getElementById('fee-bank').textContent = settings.bankText;
       if (settings.paymentQr) setupQr(settings.paymentQr);
     } else {

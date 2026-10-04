@@ -92,7 +92,7 @@ The form asks for an email address. Right after signing up, the person gets a "u
 | `payment_qr` | Drive link to your payment QR image (shared as *anyone with the link*) |
 | `receipt_folder` | Drive folder link where receipts are saved. Keep this folder's sharing **Restricted**: receipts have people's names and bank details. |
 | `notify_email` | who gets an email for every new sign-up (filled with your own address by `setup`). Several addresses: separate with commas. `off` stops the emails. |
-| `host_whatsapp` | your WhatsApp number, e.g. `+60 12-345 6789`. It goes in the confirmation email people get after signing up ("can't make it? WhatsApp … or IG …"). |
+| `host_whatsapp` | your WhatsApp number (`setup` fills in `011 39214061` if empty). Shown in the confirmation email as "questions? ask me anything" and "can't make it?". Local numbers starting with 0 get Malaysia's 60 added for the chat link. `off` hides it. |
 
 ### If you edit `Code.gs` later
 

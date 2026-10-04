@@ -301,6 +301,19 @@ button { font: inherit; color: inherit; }
 .info__value a { text-decoration: underline; text-decoration-style: dashed; text-underline-offset: 3px; }
 .cost-remark { display: block; margin-top: 3px; font-size: 14px; line-height: 1.3; color: var(--orange); }
 .cost-remark[hidden] { display: none; }
+/* payment step: hard-to-miss callout for extra costs */
+.fee-remark {
+  margin: 10px auto 2px;
+  padding: 8px 12px;
+  background: #fde7d8;
+  border: 2px dashed var(--orange);
+  border-radius: 10px;
+  color: #b8401f;
+  font-size: 16px;
+  line-height: 1.35;
+  text-align: center;
+}
+.fee-remark[hidden] { display: none; }
 .info__value .map-link {
   display: inline-block;
   margin-left: 6px;
