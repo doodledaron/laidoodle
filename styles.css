@@ -218,6 +218,30 @@ button { font: inherit; color: inherit; }
 .past__title { font-size: 16px; margin-top: 6px; }
 .past__meta { font-size: 13px; color: var(--muted); }
 
+.rules { padding: 26px 18px 0; }
+.rules__note {
+  position: relative;
+  margin: 8px 6px 0;
+  padding: 22px 18px 16px;
+  background: #fff8c9;
+  border: 1.5px solid var(--ink);
+  border-radius: 3px 10px 4px 12px / 12px 4px 10px 3px;
+  box-shadow: 3px 3px 0 var(--ink);
+  transform: rotate(-1deg);
+}
+.rules__note::before { /* a strip of tape holding the note */
+  content: "";
+  position: absolute;
+  top: -11px; left: 50%;
+  width: 86px; height: 22px;
+  margin-left: -43px;
+  background: rgba(233, 220, 192, .9);
+  clip-path: var(--torn-edge);
+  transform: rotate(2deg);
+}
+.rules__note ul { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 9px; }
+.rules__note li { position: relative; padding-left: 22px; font-size: 16px; line-height: 1.35; }
+.rules__note li::before { content: "✎"; position: absolute; left: 0; top: 0; color: var(--orange); }
 .faq { padding: 26px 18px 28px; }
 .faq .h-section { margin-bottom: 6px; }
 .faq details { border-bottom: 1.5px solid var(--ink); padding: 10px 0; }
@@ -359,6 +383,9 @@ button { font: inherit; color: inherit; }
   padding: 8px 0 4px;
   border-radius: 0;
   outline: none;
+  -webkit-appearance: none; /* iPhone gives email boxes its own white rounded look otherwise */
+  appearance: none;
+  box-shadow: none;
 }
 .field input::placeholder { color: #aaa; }
 .field input:focus { border-bottom-color: var(--blue); }
