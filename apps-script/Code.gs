@@ -278,6 +278,18 @@ function notifyHost_(ss, event, s) {
   }
 }
 
+// Run this from the Apps Script editor to check sign-up emails work. Any problem shows up as a red error.
+function testEmail() {
+  const ss = SpreadsheetApp.getActive();
+  const setting = String(settingsMap_(ss).notify_email || '').trim();
+  const to = setting || Session.getEffectiveUser().getEmail();
+  console.log('notify_email in Settings: "' + setting + '" → sending to: ' + to);
+  console.log('emails left today: ' + MailApp.getRemainingDailyQuota());
+  if (/^(off|no|n|none)$/i.test(to)) throw new Error('notify_email is set to "' + to + '", so emails are switched off');
+  MailApp.sendEmail({ to: to, subject: '✎ laidoodle test email', body: 'if u can read this, sign-up emails work ✎', name: 'laidoodle' });
+  console.log('sent ✓ (check Inbox, Spam, and "All Mail" — emails to yourself sometimes skip the inbox)');
+}
+
 function esc_(v) {
   return String(v).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 }
