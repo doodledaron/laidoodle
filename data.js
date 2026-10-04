@@ -84,11 +84,11 @@ window.LD = {
     return url ? ` style="background-image:url('${LD.esc(url)}')"` : '';
   },
 
-  // The doodle-eye loader. Text gets animated dots after it, so pass it without "…".
+  // The hand-drawn loading bar. Text gets animated dots after it, so pass it without "…".
   loader(text) {
     return `<div class="loader" role="status" aria-live="polite">
-      <div class="loader__paper"><div><img class="loader__eye" src="assets/loading-eye.jpg" srcset="assets/loading-eye.jpg 1x, assets/loading-eye@2x.jpg 2x" width="360" height="136" alt=""></div></div>
       <div class="loader__text">${LD.esc(text)}</div>
+      <div class="loader__bar" aria-hidden="true"><div class="loader__fill"></div></div>
     </div>`;
   },
 
