@@ -22,7 +22,26 @@ window.LAIDOODLE = {
 };
 
 // Small helpers shared by every page.
+// The site's root, worked out from where this file lives, so links work from any folder.
+const LD_ROOT = new URL('./', document.currentScript.src).href;
+
 window.LD = {
+  // Every internal link goes through here: /laidoodle/, /laidoodle/jam/?id=…, /laidoodle/join/?id=…
+  url: {
+    home: () => LD_ROOT,
+    jam: id => `${LD_ROOT}jam/?id=${encodeURIComponent(id)}`,
+    join: id => `${LD_ROOT}join/?id=${encodeURIComponent(id)}`,
+  },
+
+  // True when the visitor arrived here from that page of this site (so "back" can return to the same spot).
+  cameFrom(url) {
+    try {
+      const r = new URL(document.referrer), u = new URL(url);
+      const path = p => p.replace(/index\.html$/, '');
+      return r.origin === u.origin && path(r.pathname) === path(u.pathname) && (!u.search || r.search === u.search);
+    } catch (err) { return false; }
+  },
+
   months: ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'],
 
   esc(s) {
@@ -93,6 +112,6 @@ window.LD = {
   },
 
   message(el, title, text) {
-    el.innerHTML = `<div class="done"><h1 class="h-step">${title}</h1><p>${text}</p><a class="pill pill--ink" href="index.html" style="padding:10px 22px;font-size:18px;margin-top:10px">back to laidoodle</a></div>`;
+    el.innerHTML = `<div class="done"><h1 class="h-step">${title}</h1><p>${text}</p><a class="pill pill--ink" href="${LD.url.home()}" style="padding:10px 22px;font-size:18px;margin-top:10px">back to laidoodle</a></div>`;
   },
 };

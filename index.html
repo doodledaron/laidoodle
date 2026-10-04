@@ -6,11 +6,20 @@
 <title>laidoodle · 来涂鸦</title>
 <meta name="description" content="laidoodle — 来涂鸦, just come and doodle. Small-circle doodle jams in cafés.">
 <meta name="theme-color" content="#f5eedc">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="laidoodle">
+<meta property="og:title" content="laidoodle · 来涂鸦">
+<meta property="og:description" content="just come and doodle ✎ small-circle doodle jams in cafés. no drawing skills needed.">
+<meta property="og:image" content="https://doodledaron.github.io/laidoodle/assets/doodles.png">
+<meta property="og:url" content="https://doodledaron.github.io/laidoodle/">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%E2%9C%8E%3C/text%3E%3C/svg%3E">
+<link rel="canonical" href="https://doodledaron.github.io/laidoodle/">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;700&family=Patrick+Hand&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css?v=202610041237">
-<script src="data.js?v=202610041237"></script>
+<link rel="stylesheet" href="styles.css?v=202610041508">
+<script src="data.js?v=202610041508"></script>
 </head>
 <body>
 <main class="screen">
@@ -46,7 +55,7 @@
   </div>
 
   <section id="upcoming">
-    <div class="section-head"><h2 class="h-section" style="margin:0">upcoming</h2><a href="#upcoming">see all →</a></div>
+    <div class="section-head"><h2 class="h-section" style="margin:0">upcoming</h2></div>
     <div class="event-list" id="event-list"></div>
   </section>
 
@@ -108,17 +117,17 @@
       const p = LD.parts(e);
       return `
         <div class="event-row${e.thumbnail ? ' event-row--thumb' : ''}">
-          ${e.thumbnail ? `<a class="event-row__thumb placeholder" href="event.html?id=${esc(e.id)}" aria-label="${esc(e.shortTitle)}"${LD.photoStyle(e.thumbnail)}></a>` : ''}
-          <a class="event-row__date" href="event.html?id=${esc(e.id)}">
+          ${e.thumbnail ? `<a class="event-row__thumb placeholder" href="${LD.url.jam(e.id)}" aria-label="${esc(e.shortTitle)}"${LD.photoStyle(e.thumbnail)}></a>` : ''}
+          <a class="event-row__date" href="${LD.url.jam(e.id)}">
             <div class="event-row__mon">${p.mon}</div>
             <div class="event-row__day">${p.day}</div>
           </a>
-          <a class="event-row__body" href="event.html?id=${esc(e.id)}">
+          <a class="event-row__body" href="${LD.url.jam(e.id)}">
             <div class="event-row__title">${esc(e.shortTitle)}</div>
             <div class="event-row__meta">${esc(e.dayLabel)} ${esc(e.timeShort)} · ${esc(e.venueShort)} · ${LD.spotsText(e)}</div>
           </a>
           ${e.spotsLeft > 0
-            ? `<a class="pill pill--blue" href="signup.html?id=${esc(e.id)}">join</a>`
+            ? `<a class="pill pill--blue" href="${LD.url.join(e.id)}">join</a>`
             : `<span class="pill" style="padding:4px 10px;font-size:14px;border-radius:20px;color:#888">full</span>`}
         </div>`;
     }).join('') : '<div class="event-row__meta" style="padding:6px 2px">no jams planned yet, check back soon ✎</div>';
@@ -126,7 +135,7 @@
     pastList.innerHTML = past.map(j => {
       const p = LD.parts(j);
       return `
-        <a class="past__item" href="event.html?id=${esc(j.id)}">
+        <a class="past__item" href="${LD.url.jam(j.id)}">
           <div class="past__photo placeholder"${LD.photoStyle(j.thumbnail || j.photos[0])}>${j.thumbnail || j.photos[0] ? '' : 'jam photo'}</div>
           <div class="past__title">${esc(j.shortTitle)}</div>
           <div class="past__meta">${p.monTitle} ${p.dayNum} · ${j.doodlers} doodlers</div>

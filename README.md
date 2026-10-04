@@ -104,9 +104,11 @@ The live site keeps using the old version until you run **Deploy → Manage depl
 
 | file | what |
 | --- | --- |
-| `index.html` | home: title, keyword tapes, upcoming + past jams, FAQ |
-| `event.html?id=…` | event detail |
-| `signup.html?id=…` | sign-up form (3 steps for free jams, 4 for paid) |
+| `index.html` → **`/laidoodle/`** | home: title, keyword tapes, upcoming + past jams, house rules, FAQ |
+| `jam/index.html` → **`/laidoodle/jam/?id=…`** | jam details |
+| `join/index.html` → **`/laidoodle/join/?id=…`** | sign-up form (3 steps for free jams, 4 for paid) |
+| `404.html` | friendly "page not found" |
+| `event.html`, `signup.html` | old addresses: forward to `jam/` and `join/` so old shared links still work |
 | `data.js` | `apiUrl` + sample data + small shared helpers |
 | `styles.css` | all styling |
 | `apps-script/Code.gs` | the Google Sheet backend |
