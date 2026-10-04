@@ -44,7 +44,7 @@ Changes show up on the site the next time someone loads the page. No redeploys.
 | column | what to put | example |
 | --- | --- | --- |
 | `id` | short unique name, used in links. **Don't change it after people sign up.** | `jam-06` |
-| `status` | leave empty to show; `hidden` to take it off the site | |
+| `isHidden? (Y/N)` | `Y` takes it off the site; `N` or empty shows it (pick from the dropdown) | `N` |
 | `short_title` | shown on the home list and the form | `Doodle Jam #06` |
 | `title` | the big heading on the event page | `autumn leaves & lemon tea` |
 | `date` | the jam's date. It moves to "past jams" automatically after this day. | `2026-11-14` |
@@ -63,13 +63,13 @@ Changes show up on the site the next time someone loads the page. No redeploys.
 - **Photo folders:** just paste the folder link. The script switches each photo in it to *anyone with the link* so visitors can see it (your receipts folder is never touched). New photos you drop into a folder show up on the site within ~10 minutes.
 - **Add a jam:** add a row.
 - **Edit:** change the cell.
-- **Remove:** set `status` to `hidden` (better than deleting the row, because the sign-ups keep their link to it).
+- **Remove:** set `isHidden? (Y/N)` to `Y` (better than deleting the row, because the sign-ups keep their link to it).
 
 ### Sign-ups (Signups tab)
 
-A row is added for each person who signs up. If they upload a receipt, it's saved in your receipts folder as **`name - date time`** (e.g. `Ron - 2026-10-04 15.30.12.png`, same time as the `timestamp` column), and the `receipt` column links to it.
+A row is added for each person who signs up. For paid jams a receipt upload is required. It's saved in your receipts folder as **`event - name - date time`** (e.g. `Doodle Jam #05 - Ron - 2026-10-04 15.30.12.png`, same time as the `timestamp` column), and the `receipt` column links to it.
 
-- **Someone cancels:** type `cancelled` in their `status` cell and the spot opens up again.
+- **Someone cancels:** set their `isCancelled? (Y/N)` cell to `Y` and the spot opens up again.
 - You can add your own columns (e.g. `confirmed`, `notes to self`). The script only fills in its own columns and leaves yours alone.
 - Tip: **Data → Create a filter** on `event_id` shows one jam's list.
 

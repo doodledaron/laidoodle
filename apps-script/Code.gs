@@ -2,8 +2,8 @@
  * laidoodle backend: paste this into your Google Sheet (Extensions → Apps Script).
  *
  * Tabs:
- *   Events   – one row per jam. Set status to "hidden" to take one off the site.
- *   Signups  – filled in automatically. Add your own columns freely; set status to "cancelled" to free up a spot.
+ *   Events   – one row per jam. Put Y in "isHidden? (Y/N)" to take one off the site.
+ *   Signups  – filled in automatically. Add your own columns freely; put Y in "isCancelled? (Y/N)" to free up a spot.
  *   Settings – host_instagram, bank_text, payment_qr, receipt_folder (where receipts are saved).
  *
  * First time: run setup() once, then Deploy → New deployment → Web app
@@ -12,8 +12,11 @@
  * Editing the sheet itself never needs a redeploy.
  */
 
+const HIDDEN_COL = 'isHidden? (Y/N)';
+const CANCELLED_COL = 'isCancelled? (Y/N)';
+
 const EVENT_HEADERS = [
-  'id', 'status', 'short_title', 'title', 'date', 'start_time', 'end_time',
+  'id', HIDDEN_COL, 'short_title', 'title', 'date', 'start_time', 'end_time',
   'venue_short', 'venue', 'map_url', 'fee', 'fee_includes', 'capacity',
   'photos', 'cafe_photos', 'extra_questions', 'doodlers',
 ];
@@ -21,7 +24,7 @@ const EVENT_HEADERS = [
 const SIGNUP_HEADERS = [
   'timestamp', 'event_id', 'event', 'name', 'instagram', 'phone', 'doodly',
   'paid', 'receipt', 'notes', 'extra_answers',
-  'agree_safe', 'agree_fee', 'agree_photos', 'status',
+  'agree_safe', 'agree_fee', 'agree_photos', CANCELLED_COL,
 ];
 
 const SETTINGS_ROWS = [
@@ -41,7 +44,7 @@ function setup() {
   const ss = SpreadsheetApp.getActive();
 
   const events = ensureSheet_(ss, 'Events', EVENT_HEADERS);
-  upgradeHeaders_(events, EVENT_HEADERS, { how_it_works_photo: 'cafe_photos' });
+  upgradeHeaders_(events, EVENT_HEADERS, { how_it_works_photo: 'cafe_photos', status: HIDDEN_COL });
   if (events.getLastRow() === 1) {
     [
       ['jam-05', '', 'Doodle Jam #05', 'autumn leaves & lemon tea', '2026-11-14', '2pm', '5pm', 'café TBD', 'café name, street', '', 10, '1 drink', 8, '', '', '', ''],
@@ -50,13 +53,17 @@ function setup() {
       ['jam-03', '', '#03 rainy café', 'rainy café', '2025-09-21', '2pm', '5pm', 'café', 'café', '', 0, '', 8, '', '', '', 6],
     ].forEach(v => {
       const o = {};
-      EVENT_HEADERS.forEach((k, n) => { o[k] = v[n]; });
+      EVENT_HEADERS.forEach((k, n) => { o[key_(k)] = v[n]; });
+      o.is_hidden = 'N';
       appendByHeader_(events, o); // by column name, so it works whatever order the columns are in
     });
   }
   events.getRange('E:E').setNumberFormat('yyyy-mm-dd');
+  yesNoColumn_(events, 'is_hidden');
 
   const signups = ensureSheet_(ss, 'Signups', SIGNUP_HEADERS);
+  upgradeHeaders_(signups, SIGNUP_HEADERS, { status: CANCELLED_COL });
+  yesNoColumn_(signups, 'is_cancelled');
   signups.getRange('F:F').setNumberFormat('@'); // keep "+60…" phone numbers as text
 
   const settings = ensureSheet_(ss, 'Settings', ['key', 'value']);
@@ -77,25 +84,40 @@ function ensureSheet_(ss, name, headers) {
   return sheet;
 }
 
-// Settings → receipt_folder (a Drive folder link or ID), else the default above.
 // Brings an older sheet's header row up to date: renames old columns and adds missing ones at the end.
-// Only the header row changes; your data rows stay where they are.
+// A renamed "status" column also has its old words turned into Y/N (hidden / cancelled → Y).
+// Your data rows stay where they are.
 function upgradeHeaders_(sheet, headers, renames) {
   const width = sheet.getLastColumn();
   const row = sheet.getRange(1, 1, 1, width).getValues()[0].map(v => String(v).trim());
+  const keys = () => row.map(key_);
   Object.keys(renames).forEach(from => {
-    const i = row.indexOf(from);
-    if (i !== -1 && row.indexOf(renames[from]) === -1) {
-      sheet.getRange(1, i + 1).setValue(renames[from]);
-      row[i] = renames[from];
+    const i = keys().indexOf(from);
+    if (i === -1 || keys().indexOf(key_(renames[from])) !== -1) return;
+    sheet.getRange(1, i + 1).setValue(renames[from]);
+    row[i] = renames[from];
+    if (from === 'status' && sheet.getLastRow() > 1) {
+      const cells = sheet.getRange(2, i + 1, sheet.getLastRow() - 1, 1);
+      cells.setValues(cells.getValues().map(r => [isYes_(r[0]) ? 'Y' : 'N']));
     }
   });
-  headers.filter(h => row.indexOf(h) === -1).forEach(h => {
+  headers.filter(h => keys().indexOf(key_(h)) === -1).forEach(h => {
     row.push(h);
     sheet.getRange(1, row.length).setValue(h).setFontWeight('bold');
   });
 }
 
+// A Y/N dropdown on that column, so it's obvious what to type.
+function yesNoColumn_(sheet, key) {
+  const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0].map(key_);
+  const col = headers.indexOf(key) + 1;
+  if (!col || sheet.getMaxRows() < 2) return;
+  const rule = SpreadsheetApp.newDataValidation().requireValueInList(['Y', 'N'], true).setAllowInvalid(true)
+    .setHelpText('Y = yes, N or empty = no').build();
+  sheet.getRange(2, col, sheet.getMaxRows() - 1, 1).setDataValidation(rule);
+}
+
+// Settings → receipt_folder (a Drive folder link or ID), else the default above.
 function receiptFolder_(ss) {
   const value = String(settingsMap_(ss).receipt_folder || '').trim();
   const m = value.match(/folders\/([\w-]+)|[?&]id=([\w-]+)/);
@@ -103,11 +125,11 @@ function receiptFolder_(ss) {
   return DriveApp.getFolderById(id);
 }
 
-// "Ron - 2026-10-04 15.30.12.png": who + when, keeping the file's extension.
-function receiptName_(person, original, when, tz) {
-  const who = String(person).replace(/[\\/:*?"<>|\n\r\t]+/g, '-').trim() || 'someone';
+// "Doodle Jam #05 - Ron - 2026-10-04 15.30.12.png": event + who + when, keeping the file's extension.
+function receiptName_(eventName, person, original, when, tz) {
+  const clean = s => String(s).replace(/[\\/:*?"<>|\n\r\t]+/g, '-').trim();
   const ext = (String(original).match(/\.[A-Za-z0-9]{1,5}$/) || [''])[0].toLowerCase();
-  return who + ' - ' + Utilities.formatDate(when, tz, 'yyyy-MM-dd HH.mm.ss') + ext;
+  return [clean(eventName) || 'jam', clean(person) || 'someone', Utilities.formatDate(when, tz, 'yyyy-MM-dd HH.mm.ss')].join(' - ') + ext;
 }
 
 // ---------- GET: events for the site (never returns sign-up details) ----------
@@ -116,7 +138,7 @@ function doGet() {
   const ss = SpreadsheetApp.getActive();
   const counts = signupCounts_(ss);
   const events = readRows_(ss.getSheetByName('Events'))
-    .filter(r => r.id && String(r.status).toLowerCase() !== 'hidden')
+    .filter(r => r.id && !isHiddenRow_(r))
     .map(r => toEvent_(r, counts[r.id] || 0, ss.getSpreadsheetTimeZone()));
   return json_({ settings: readSettings_(ss), events: events });
 }
@@ -166,20 +188,21 @@ function doPost(e) {
     const ss = SpreadsheetApp.getActive();
     const tz = ss.getSpreadsheetTimeZone();
     const row = readRows_(ss.getSheetByName('Events')).find(r => String(r.id).trim() === body.event_id);
-    if (!row || String(row.status).toLowerCase() === 'hidden') return json_({ ok: false, error: 'not_found' });
+    if (!row || isHiddenRow_(row)) return json_({ ok: false, error: 'not_found' });
 
     const event = toEvent_(row, signupCounts_(ss)[row.id] || 0, tz);
     const today = Utilities.formatDate(new Date(), tz, 'yyyy-MM-dd');
     if (event.date && event.date < today) return json_({ ok: false, error: 'closed' });
     if (event.spotsLeft <= 0) return json_({ ok: false, error: 'full' });
     if (event.fee > 0 && (!body.paid || !body.agree_fee)) return json_({ ok: false, error: 'invalid' });
+    if (event.fee > 0 && !(body.receipt && body.receipt.data)) return json_({ ok: false, error: 'receipt_missing' });
 
     const now = new Date();
     let receipt = '';
     if (event.fee > 0 && body.receipt && body.receipt.data) {
       const bytes = Utilities.base64Decode(body.receipt.data);
       if (bytes.length > MAX_RECEIPT_BYTES) return json_({ ok: false, error: 'receipt_too_big' });
-      const name = receiptName_(body.name, body.receipt.name, now, tz);
+      const name = receiptName_(event.shortTitle, body.name, body.receipt.name, now, tz);
       receipt = receiptFolder_(ss).createFile(Utilities.newBlob(bytes, body.receipt.type || 'application/octet-stream', name)).getUrl();
     }
 
@@ -199,7 +222,7 @@ function doPost(e) {
       agree_safe: 'yes',
       agree_fee: event.fee > 0 ? 'yes' : '',
       agree_photos: 'yes',
-      status: '',
+      is_cancelled: 'N',
     });
     return json_({ ok: true });
   } finally {
@@ -211,7 +234,7 @@ function doPost(e) {
 
 function readRows_(sheet) {
   const values = sheet.getDataRange().getValues();
-  const headers = values.shift().map(h => String(h).trim().toLowerCase());
+  const headers = values.shift().map(key_);
   return values.map(v => {
     const o = {};
     headers.forEach((h, i) => { o[h] = v[i] === null || v[i] === undefined ? '' : v[i]; });
@@ -238,7 +261,7 @@ function readSettings_(ss) {
 function signupCounts_(ss) {
   const counts = {};
   readRows_(ss.getSheetByName('Signups')).forEach(r => {
-    if (!r.event_id || String(r.status).toLowerCase() === 'cancelled') return;
+    if (!r.event_id || isYes_(r.is_cancelled) || /^cancell?ed$/i.test(String(r.status))) return;
     counts[r.event_id] = (counts[r.event_id] || 0) + 1;
   });
   return counts;
@@ -246,9 +269,28 @@ function signupCounts_(ss) {
 
 // Writes values under the matching header, so extra columns you add yourself are left alone.
 function appendByHeader_(sheet, data) {
-  const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0].map(h => String(h).trim().toLowerCase());
+  const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0].map(key_);
   const row = headers.map(h => (h in data ? safeCell_(data[h]) : ''));
   sheet.appendRow(row);
+}
+
+// Header text → the name the script uses. "isHidden? (Y/N)" → is_hidden, "isCancelled? (Y/N)" → is_cancelled,
+// anything else is just lower-cased, so small spelling/spacing changes in those two headers don't matter.
+function key_(header) {
+  const text = String(header).trim();
+  const flat = text.toLowerCase().replace(/[^a-z0-9]/g, '');
+  if (flat.indexOf('ishidden') === 0) return 'is_hidden';
+  if (flat.indexOf('iscancel') === 0 || flat.indexOf('iscancl') === 0) return 'is_cancelled';
+  return text.toLowerCase();
+}
+
+// Y / yes / true / ticked checkbox (and the old words "hidden" / "cancelled") count as yes.
+function isYes_(v) {
+  return v === true || /^(y|yes|true|hidden|cancell?ed)$/i.test(String(v).trim());
+}
+
+function isHiddenRow_(r) {
+  return isYes_(r.is_hidden) || /^hidden$/i.test(String(r.status || ''));
 }
 
 // Stops "+60…" turning into a number and "=…" turning into a formula.

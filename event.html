@@ -30,7 +30,7 @@
     const ended = LD.isPast(e);
     const open = !ended && e.spotsLeft > 0;
     const photos = e.photos.length ? e.photos : ['', '', '', ''];
-    const map = /^https?:\/\//.test(e.mapUrl) ? ` <a href="${esc(e.mapUrl)}" target="_blank" rel="noopener">→ map</a>` : '';
+    const map = /^https?:\/\//.test(e.mapUrl) ? ` <a class="map-link" href="${esc(e.mapUrl)}" target="_blank" rel="noopener">📍 open map</a>` : '';
     const cost = e.fee > 0
       ? (e.feeIncludes ? `RM ${esc(e.fee)} · includes ${esc(e.feeIncludes)}` : `RM ${esc(e.fee)} commitment fee`)
       : 'free · just order something at the café ☕';
