@@ -3,7 +3,7 @@
 window.LAIDOODLE = {
   // Your Apps Script web-app URL (Deploy → Manage deployments → Web app URL, ends in /exec).
   // While this is empty the site shows the sample jams below and sign-ups are NOT saved.
-  apiUrl: '',
+  apiUrl: 'https://script.google.com/macros/s/AKfycbyYknRiNCaNY7taqjVZe2dson4-7ej7hXiS0bdXx8_dw_LnAlOx-zgGQJG8brjUYu-G/exec',
 
   // Sample data, used only while apiUrl is empty. Same shape as what the sheet returns.
   sample: {
