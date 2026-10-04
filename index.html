@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>laidoodle · 来涂鸦</title>
+<meta name="description" content="laidoodle — 来涂鸦, just come and doodle. Small-circle doodle jams in cafés.">
+<meta name="theme-color" content="#f5eedc">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;700&family=Patrick+Hand&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+<script src="data.js"></script>
+</head>
+<body>
+<main class="screen">
+
+  <header class="hero">
+    <div class="topbar">
+      <span>laidoodle</span>
+      <details class="menu">
+        <summary aria-label="menu">≡</summary>
+        <nav>
+          <a href="#upcoming">upcoming</a>
+          <a href="#past">past jams</a>
+          <a href="#faq">questions?</a>
+        </nav>
+      </details>
+    </div>
+    <div class="title-card">
+      <div class="title-card__paper">
+        <h1>laidoodle</h1>
+        <div class="title-card__zh">来 doodle</div>
+        <p class="title-card__note">laidoodle is translated from chinese word 来涂鸦 — which basically means just come and doodle.</p>
+      </div>
+    </div>
+  </header>
+
+  <div class="keywords">
+    <span class="tape" style="transform:rotate(-4deg)">small circle</span>
+    <span class="tape" style="transform:rotate(3deg)">safe space</span>
+    <span class="tape" style="transform:rotate(2deg)">conversations</span>
+    <span class="tape" style="transform:rotate(-3deg)">doodles</span>
+    <span class="tape" style="transform:rotate(2deg)">cafe hopping</span>
+  </div>
+
+  <section id="upcoming">
+    <div class="section-head"><h2 class="h-section" style="margin:0">upcoming</h2><a href="#upcoming">see all →</a></div>
+    <div class="event-list" id="event-list"></div>
+  </section>
+
+  <section id="past">
+    <h2 class="h-section" style="margin:0;padding:22px 18px 6px">past jams</h2>
+    <div class="past" id="past-list"></div>
+  </section>
+
+  <section class="faq" id="faq">
+    <h2 class="h-section" style="margin:0 0 6px">questions?</h2>
+    <details open>
+      <summary>i can't draw, can i come?</summary>
+      <p>doodle is meant to linking the lines and dots, and i bring this to connect people. we are a safe space to know people and doodle anything u want</p>
+    </details>
+    <details>
+      <summary>can i bring a friend?</summary>
+      <p>yes definitely but ask your friend to fill in the form too. u can mention to me u r whose fren in the "anything i should know" section</p>
+    </details>
+    <details>
+      <summary>map and how to get there?</summary>
+      <p>location will change time to time as im exploring diff cafes so... its good to go cafe hopping together right!</p>
+    </details>
+    <details>
+      <summary>im introverted, i dont like socializing..</summary>
+      <p>Its cool! no one is forced to talk here, just take ur own time</p>
+    </details>
+    <details>
+      <summary>can i take back my doodles?</summary>
+      <p>unfortunately I will keep those paper, but feel free to take pictures or draw on your own sketchbook if u dont feel like it! but... ofc doodling together is a cool idea right.. hahha</p>
+    </details>
+    <details>
+      <summary>im camera shy and i don't wanna be publicized in IG story/post</summary>
+      <p>u good! just drop a message in the "anything i should know" form then I will cover up ur face. my job is to keep the space safe!</p>
+    </details>
+  </section>
+
+</main>
+
+<script>
+  const { upcoming, past } = window.LAIDOODLE;
+  const { esc } = LD;
+
+  document.getElementById('event-list').innerHTML = upcoming.map(e => {
+    const p = LD.parts(e);
+    return `
+      <div class="event-row">
+        <a class="event-row__date" href="event.html?id=${esc(e.id)}">
+          <div class="event-row__mon">${p.mon}</div>
+          <div class="event-row__day">${p.day}</div>
+        </a>
+        <a class="event-row__body" href="event.html?id=${esc(e.id)}">
+          <div class="event-row__title">${esc(e.shortTitle)}</div>
+          <div class="event-row__meta">${esc(e.dayLabel)} ${esc(e.timeShort)} · ${esc(e.venueShort)} · ${LD.spotsText(e)}</div>
+        </a>
+        ${e.spotsLeft > 0
+          ? `<a class="pill pill--blue" href="signup.html?id=${esc(e.id)}">join</a>`
+          : `<span class="pill" style="padding:4px 10px;font-size:14px;border-radius:20px;color:#888">full</span>`}
+      </div>`;
+  }).join('');
+
+  document.getElementById('past-list').innerHTML = past.map(j => `
+    <div class="past__item">
+      <div class="past__photo placeholder"${LD.photoStyle(j.photo)}>${j.photo ? '' : 'jam photo'}</div>
+      <div class="past__title">${esc(j.title)}</div>
+      <div class="past__meta">${esc(j.date)} · ${j.doodlers} doodlers</div>
+    </div>`).join('');
+
+  // close the ≡ menu after picking a section
+  document.querySelectorAll('.menu nav a').forEach(a => a.addEventListener('click', () => a.closest('details').open = false));
+</script>
+</body>
+</html>

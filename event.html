@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>laidoodle · jam details</title>
+<meta name="theme-color" content="#f5eedc">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;700&family=Patrick+Hand&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+<script src="data.js"></script>
+</head>
+<body>
+<main class="screen" id="app"></main>
+
+<script>
+  const { esc } = LD;
+  const e = LD.findEvent(new URLSearchParams(location.search).get('id'));
+  const p = LD.parts(e);
+  const photos = e.photos.length ? e.photos : ['', '', '', ''];
+  const where = esc(e.venue) + (e.mapUrl ? ` <a href="${esc(e.mapUrl)}" target="_blank" rel="noopener">→ map</a>` : '');
+  const cost = e.fee > 0 ? `RM ${e.fee} commitment fee` : 'free';
+  const pct = Math.round(((e.capacity - e.spotsLeft) / e.capacity) * 100);
+
+  document.title = `laidoodle · ${e.shortTitle}`;
+  document.getElementById('app').innerHTML = `
+    <div class="carousel">
+      <div class="carousel__track" id="track">
+        ${photos.map(src => `<div class="carousel__slide placeholder"${LD.photoStyle(src)}>${src ? '' : 'event photos (swipe)'}</div>`).join('')}
+      </div>
+      <a class="carousel__back" href="index.html" aria-label="back">←</a>
+      <div class="carousel__dots" id="dots">${photos.map((_, i) => `<span${i === 0 ? ' class="is-active"' : ''}></span>`).join('')}</div>
+    </div>
+
+    <div class="detail-head">
+      <div class="detail-head__kicker">${esc(e.shortTitle)}</div>
+      <h1>${esc(e.title)}</h1>
+      <div><span class="tape">materials provided: papers only</span></div>
+    </div>
+
+    <div class="info">
+      <div class="info__row"><span class="info__label">when</span><span class="info__value">${esc(e.dayLabel)}, ${p.monTitle} ${p.dayNum} · ${esc(e.timeRange)}</span></div>
+      <div class="info__row"><span class="info__label">where</span><span class="info__value">${where}</span></div>
+      <div class="info__row"><span class="info__label">cost</span><span class="info__value">${cost}</span></div>
+      <div class="info__row"><span class="info__label">spots</span><span class="spots"><span style="width:${pct}%"></span></span><span style="font-size:14px">${e.capacity - e.spotsLeft}/${e.capacity}</span></div>
+    </div>
+
+    <section class="block">
+      <h2 class="h-sub" style="margin:0">how it works?</h2>
+      <p>I will prepare big papers only (some pens) and it will be 1 long table or multiple. no one is forced to share stories, feel free to move around other tables if u feel uncomfy. make yourself home, no pressure to TALK &amp; SOCIALIZE.</p>
+      <div class="block__photo placeholder"${LD.photoStyle(e.howItWorksPhoto)}>${e.howItWorksPhoto ? '' : 'photo: long table + big paper'}</div>
+    </section>
+
+    <section class="block">
+      <h2 class="h-sub" style="margin:0">bring your own</h2>
+      <div class="bring"><span>○ pens / markers</span><span>○ pencils</span><span>○ crayons</span></div>
+      <div class="no-mess">✕ no watercolors or anything messy please</div>
+    </section>
+
+    <div class="join-bar">
+      <div class="join-bar__info">${e.spotsLeft > 0 ? `${e.spotsLeft} spots left` : 'this jam is full'}<strong>${p.monTitle} ${p.dayNum} · ${esc(e.timeShort)}</strong></div>
+      <a class="pill pill--orange" href="signup.html?id=${esc(e.id)}"${e.spotsLeft > 0 ? '' : ' aria-disabled="true"'}>I'm coming →</a>
+    </div>
+  `;
+
+  // carousel dots follow the swipe position
+  const track = document.getElementById('track');
+  const dots = [...document.getElementById('dots').children];
+  track.addEventListener('scroll', () => {
+    const i = Math.round(track.scrollLeft / track.clientWidth);
+    dots.forEach((d, j) => d.classList.toggle('is-active', i === j));
+  }, { passive: true });
+</script>
+</body>
+</html>
