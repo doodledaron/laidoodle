@@ -32,6 +32,7 @@ const SETTINGS_ROWS = [
   ['bank_text', 'or bank transfer: account details'],
   ['payment_qr', ''],
   ['receipt_folder', 'https://drive.google.com/drive/folders/1mKrXlb5sxRFExk9kNA22RzQjDfi9W45D'],
+  ['notify_email', ''], // filled with your own email by setup(); "off" turns sign-up emails off
 ];
 
 // Used when the Settings tab has no receipt_folder row.
@@ -68,7 +69,9 @@ function setup() {
 
   const settings = ensureSheet_(ss, 'Settings', ['key', 'value']);
   const keys = settings.getDataRange().getValues().map(r => String(r[0]).trim());
-  SETTINGS_ROWS.filter(r => keys.indexOf(r[0]) === -1).forEach(r => settings.appendRow(r)); // only adds missing rows
+  SETTINGS_ROWS.filter(r => keys.indexOf(r[0]) === -1).forEach(r => {           // only adds missing rows
+    settings.appendRow(r[0] === 'notify_email' ? [r[0], Session.getEffectiveUser().getEmail()] : r);
+  });
 
   receiptFolder_(ss); // fails here (not at sign-up time) if the folder can't be reached
   SpreadsheetApp.getUi().alert('laidoodle is set up ✎ Now: Deploy → New deployment → Web app.');
@@ -208,7 +211,7 @@ function doPost(e) {
     }
 
     const extra = (body.extra || []).map(x => x.q + ': ' + (x.a || '')).join('\n');
-    appendByHeader_(ss.getSheetByName('Signups'), {
+    const signup = {
       timestamp: now,
       event_id: event.id,
       event: event.shortTitle,
@@ -224,11 +227,59 @@ function doPost(e) {
       agree_fee: event.fee > 0 ? 'yes' : '',
       agree_photos: 'yes',
       is_cancelled: 'N',
-    });
+    };
+    appendByHeader_(ss.getSheetByName('Signups'), signup);
+    lock.releaseLock(); // the sign-up is saved; the email below doesn't need to hold anyone else up
+    notifyHost_(ss, event, signup);
     return json_({ ok: true });
   } finally {
     lock.releaseLock();
   }
+}
+
+// ---------- email to you for every sign-up ----------
+
+// Sends to Settings → notify_email (comma-separate several addresses; "off" to stop).
+// If the email fails, the sign-up is still saved.
+function notifyHost_(ss, event, s) {
+  try {
+    const to = String(settingsMap_(ss).notify_email || '').trim() || Session.getEffectiveUser().getEmail();
+    if (!to || /^(off|no|n|none)$/i.test(to)) return;
+    const left = Math.max(0, event.spotsLeft - 1);
+    const ig = String(s.instagram).replace(/^@?/, '');
+    const rows = [
+      ['jam', event.shortTitle + ' · ' + event.dayLabel + ' ' + event.date + ' ' + event.timeShort],
+      ['name', s.name],
+      ['instagram', '@' + ig, 'https://instagram.com/' + encodeURIComponent(ig)],
+      ['phone / whatsapp', s.phone, 'https://wa.me/' + String(s.phone).replace(/\D/g, '')],
+      ['how doodly', s.doodly],
+      ['paid', s.paid],
+      ['receipt', s.receipt ? 'open receipt' : '', s.receipt],
+      ['anything to know', s.notes],
+      ['extra answers', s.extra_answers],
+      ['spots left', left + ' / ' + event.capacity],
+    ].filter(r => String(r[1]).trim());
+    const html = '<div style="font-family:sans-serif;font-size:15px;color:#1d1d1d">' +
+      '<p style="font-size:18px">✎ <b>' + esc_(s.name) + '</b> just signed up for <b>' + esc_(event.shortTitle) + '</b></p>' +
+      '<table cellpadding="6" style="border-collapse:collapse">' +
+      rows.map(r => '<tr><td style="color:#888;vertical-align:top">' + r[0] + '</td><td>' +
+        (r[2] ? '<a href="' + esc_(r[2]) + '">' + esc_(r[1]) + '</a>' : esc_(r[1]).replace(/\n/g, '<br>')) + '</td></tr>').join('') +
+      '</table><p><a href="' + ss.getUrl() + '">open the sheet</a></p></div>';
+    const text = rows.map(r => r[0] + ': ' + (r[2] && r[0] === 'receipt' ? r[2] : r[1])).join('\n');
+    MailApp.sendEmail({
+      to: to,
+      subject: '✎ new sign-up: ' + s.name + ' → ' + event.shortTitle + ' (' + left + ' spots left)',
+      body: text,
+      htmlBody: html,
+      name: 'laidoodle',
+    });
+  } catch (err) {
+    console.error('sign-up email failed: ' + err); // shows under Executions in Apps Script
+  }
+}
+
+function esc_(v) {
+  return String(v).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 }
 
 // ---------- helpers ----------

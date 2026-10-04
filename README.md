@@ -74,6 +74,10 @@ A row is added for each person who signs up. For paid jams a receipt upload is r
 - You can add your own columns (e.g. `confirmed`, `notes to self`). The script only fills in its own columns and leaves yours alone.
 - Tip: **Data → Create a filter** on `event_id` shows one jam's list.
 
+### Sign-up emails
+
+Every new sign-up emails you the details: name, IG (tap to open), WhatsApp (tap to chat), how doodly, paid, a receipt link, their answers, and spots left. It goes to `notify_email` in Settings. Gmail lets a script send about 100 emails a day, far more than a jam needs. If an email ever fails, the sign-up is still saved.
+
 ### Settings tab
 
 | key | value |
@@ -82,6 +86,7 @@ A row is added for each person who signs up. For paid jams a receipt upload is r
 | `bank_text` | shown under the QR on the payment step |
 | `payment_qr` | Drive link to your payment QR image (shared as *anyone with the link*) |
 | `receipt_folder` | Drive folder link where receipts are saved. Keep this folder's sharing **Restricted**: receipts have people's names and bank details. |
+| `notify_email` | who gets an email for every new sign-up (filled with your own address by `setup`). Several addresses: separate with commas. `off` stops the emails. |
 
 ### If you edit `Code.gs` later
 
