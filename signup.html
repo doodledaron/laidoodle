@@ -44,6 +44,12 @@
           <small>contactable via whatsapp</small>
           <small class="err">a whatsapp-able number please</small>
         </div>
+        <div class="field">
+          <label for="email">email</label>
+          <input type="email" id="email" name="email" placeholder="you@email.com" autocomplete="email" inputmode="email" autocapitalize="off" spellcheck="false" required>
+          <small>i'll send ur confirmation here</small>
+          <small class="err">that email doesn't look right</small>
+        </div>
       </div>
       <div class="step__foot"><button type="button" class="pill pill--ink" data-next>next →</button></div>
     </section>
@@ -219,9 +225,10 @@
   function valid(name) {
     if (name === 'who') {
       let ok = true;
-      ['name', 'instagram', 'phone'].forEach(id => {
+      ['name', 'instagram', 'phone', 'email'].forEach(id => {
         const input = document.getElementById(id);
-        const bad = !input.value.trim() || (id === 'phone' && input.value.replace(/\D/g, '').length < 7);
+        const v = input.value.trim();
+        const bad = !v || (id === 'phone' && v.replace(/\D/g, '').length < 7) || (id === 'email' && !/^[^\s@<>,;]+@[^\s@<>,;]+\.[^\s@<>,;]+$/.test(v));
         input.closest('.field').classList.toggle('is-invalid', bad);
         if (bad && ok) input.focus();
         if (bad) ok = false;
@@ -340,6 +347,7 @@
         name: document.getElementById('name').value.trim(), // form.name is the form's own name attribute
         instagram: form.instagram.value.trim(),
         phone: form.phone.value.trim(),
+        email: document.getElementById('email').value.trim(),
         doodly: form.doodly.value,
         paid: paid && form.paid.checked,
         notes: form.notes.value.trim(),
@@ -366,7 +374,7 @@
     }
 
     document.getElementById('done-text').textContent =
-      `see u at ${e.shortTitle} on ${e.dayLabel}, ${p.monTitle} ${p.dayNum} · ${e.timeShort}! if the date or venue changes, i'll let u know on whatsapp or IG.`;
+      `see u at ${e.shortTitle} on ${e.dayLabel}, ${p.monTitle} ${p.dayNum} · ${e.timeShort}! a confirmation is on its way to ${document.getElementById('email').value.trim()} (check spam too). if the date or venue changes, i'll let u know on whatsapp or IG.`;
     show(flow.length);
   });
 </script>

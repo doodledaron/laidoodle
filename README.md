@@ -79,6 +79,10 @@ A row is added for each person who signs up. For paid jams a receipt upload is r
 
 Every new sign-up emails you the details: name, IG (tap to open), WhatsApp (tap to chat), how doodly, paid, a receipt link, their answers, and spots left. It goes to `notify_email` in Settings. Gmail lets a script send about 100 emails a day, far more than a jam needs. If an email ever fails, the sign-up is still saved.
 
+### Confirmation email to the doodler
+
+The form asks for an email address. Right after signing up, the person gets a "u're in!" email with when / where (with the map link) / cost / what to bring, plus: *can't make it? let me know on WhatsApp `host_whatsapp` or IG `host_instagram`*. If they reply, the reply goes to your `notify_email`.
+
 ### Settings tab
 
 | key | value |
@@ -88,6 +92,7 @@ Every new sign-up emails you the details: name, IG (tap to open), WhatsApp (tap 
 | `payment_qr` | Drive link to your payment QR image (shared as *anyone with the link*) |
 | `receipt_folder` | Drive folder link where receipts are saved. Keep this folder's sharing **Restricted**: receipts have people's names and bank details. |
 | `notify_email` | who gets an email for every new sign-up (filled with your own address by `setup`). Several addresses: separate with commas. `off` stops the emails. |
+| `host_whatsapp` | your WhatsApp number, e.g. `+60 12-345 6789`. It goes in the confirmation email people get after signing up ("can't make it? WhatsApp … or IG …"). |
 
 ### If you edit `Code.gs` later
 

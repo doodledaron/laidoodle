@@ -24,7 +24,7 @@ const EVENT_HEADERS = [
 const SIGNUP_HEADERS = [
   'timestamp', 'event_id', 'event', 'name', 'instagram', 'phone', 'doodly',
   'paid', 'receipt', 'notes', 'extra_answers',
-  'agree_safe', 'agree_fee', 'agree_photos', CANCELLED_COL,
+  'agree_safe', 'agree_fee', 'agree_photos', CANCELLED_COL, 'email',
 ];
 
 const SETTINGS_ROWS = [
@@ -33,6 +33,7 @@ const SETTINGS_ROWS = [
   ['payment_qr', ''],
   ['receipt_folder', 'https://drive.google.com/drive/folders/1mKrXlb5sxRFExk9kNA22RzQjDfi9W45D'],
   ['notify_email', ''], // filled with your own email by setup(); "off" turns sign-up emails off
+  ['host_whatsapp', ''], // your WhatsApp number, shown in the confirmation email, e.g. +60 12-345 6789
 ];
 
 // Used when the Settings tab has no receipt_folder row.
@@ -182,8 +183,9 @@ function doPost(e) {
   try { body = JSON.parse(e.postData.contents); } catch (err) { return json_({ ok: false, error: 'invalid' }); }
   if (body.website) return json_({ ok: true }); // honeypot: bots fill this, people never see it
 
-  const required = ['event_id', 'name', 'instagram', 'phone', 'doodly'];
-  if (required.some(k => !String(body[k] || '').trim()) || !body.agree_safe || !body.agree_photos) {
+  const required = ['event_id', 'name', 'instagram', 'phone', 'doodly', 'email'];
+  body.email = String(body.email || '').trim();
+  if (required.some(k => !String(body[k] || '').trim()) || !body.agree_safe || !body.agree_photos || !isEmail_(body.email)) {
     return json_({ ok: false, error: 'invalid' });
   }
 
@@ -219,6 +221,7 @@ function doPost(e) {
       name: body.name,
       instagram: body.instagram,
       phone: body.phone,
+      email: body.email,
       doodly: body.doodly,
       paid: event.fee > 0 ? (body.paid ? 'yes' : 'no') : 'free',
       receipt: receipt,
@@ -232,6 +235,7 @@ function doPost(e) {
     appendByHeader_(ss.getSheetByName('Signups'), signup);
     lock.releaseLock(); // the sign-up is saved; the email below doesn't need to hold anyone else up
     notifyHost_(ss, event, signup);
+    confirmToDoodler_(ss, event, signup);
     return json_({ ok: true });
   } finally {
     lock.releaseLock();
@@ -253,6 +257,7 @@ function notifyHost_(ss, event, s) {
       ['name', s.name],
       ['instagram', '@' + ig, 'https://instagram.com/' + encodeURIComponent(ig)],
       ['phone / whatsapp', s.phone, 'https://wa.me/' + String(s.phone).replace(/\D/g, '')],
+      ['email', s.email, 'mailto:' + s.email],
       ['how doodly', s.doodly],
       ['paid', s.paid],
       ['receipt', s.receipt ? 'open receipt' : '', s.receipt],
@@ -290,6 +295,73 @@ function testEmail() {
   if (/^(off|no|n|none)$/i.test(to)) throw new Error('notify_email is set to "' + to + '", so emails are switched off');
   MailApp.sendEmail({ to: to, subject: '✎ laidoodle test email', body: 'if u can read this, sign-up emails work ✎', name: 'laidoodle' });
   console.log('sent ✓ (check Inbox, Spam, and "All Mail" — emails to yourself sometimes skip the inbox)');
+}
+
+// ---------- confirmation email to the person who signed up ----------
+
+function confirmToDoodler_(ss, event, s) {
+  try {
+    const st = settingsMap_(ss);
+    const ig = String(st.host_instagram || '').trim();
+    const wa = String(st.host_whatsapp || '').trim();
+    const waDigits = wa.replace(/\D/g, '');
+    const host = String(st.notify_email || '').trim();
+    const when = event.dayLabel + ', ' + longDate_(event.date) + ' · ' + event.timeRange;
+    let cost = event.fee > 0 ? 'RM ' + event.fee + (event.feeIncludes ? ' · includes ' + event.feeIncludes : ' commitment fee') + (s.paid === 'yes' ? ' (paid ✓)' : '')
+      : 'free · just order something at the café ☕';
+    if (event.costRemark) cost += '\n+ ' + event.costRemark;
+
+    // [label, text, link?]
+    const details = [
+      ['when', when],
+      ['where', event.venue, /^https?:\/\//.test(event.mapUrl) ? event.mapUrl : ''],
+      ['cost', cost],
+      ['bring', 'your own pens / markers / pencils / crayons (no watercolors or anything messy please)'],
+    ];
+    const contact = [];
+    if (wa) contact.push(['WhatsApp', wa, 'https://wa.me/' + waDigits]);
+    if (ig) contact.push(['IG', ig, 'https://instagram.com/' + encodeURIComponent(ig.replace(/^@/, ''))]);
+    const contactText = contact.map(c => c[0] + ' ' + c[1]).join(' or ') || 'DM me';
+
+    const cell = v => esc_(v).replace(/\n/g, '<br>');
+    const link = r => r[2] ? '<a href="' + esc_(r[2]) + '" style="color:#2b3a9e">' + cell(r[1]) + '</a>' : cell(r[1]);
+    const html = '<div style="font-family:sans-serif;font-size:15px;line-height:1.5;color:#1d1d1d;max-width:480px">' +
+      '<p style="font-size:20px;margin:0 0 8px">hi ' + esc_(s.name) + ', u\'re in! ✎</p>' +
+      '<p style="margin:0 0 14px">see u at <b>' + esc_(event.shortTitle) + '</b>' + (event.title && event.title !== event.shortTitle ? ' (' + esc_(event.title) + ')' : '') + '.</p>' +
+      '<table cellpadding="6" style="border-collapse:collapse;background:#f5eedc;border-radius:10px">' +
+      details.map(r => '<tr><td style="color:#888;vertical-align:top">' + r[0] + '</td><td>' + link(r) + '</td></tr>').join('') +
+      '</table>' +
+      '<p style="margin:16px 0 0"><b>can\'t make it?</b> please let me know so someone else can take ur spot: ' +
+      (contact.length ? contact.map(c => c[0] + ' ' + link(c)).join(' or ') : 'DM me') + '.</p>' +
+      '<p style="margin:10px 0 0;color:#666">if the date or venue changes, i\'ll let u know on WhatsApp or IG.</p>' +
+      '<p style="margin:16px 0 0">see u soon,<br>laidoodle 来涂鸦</p></div>';
+    const text = 'hi ' + s.name + ", u're in! ✎\n\nsee u at " + event.shortTitle + '.\n\n' +
+      details.map(r => r[0] + ': ' + r[1] + (r[2] ? ' (' + r[2] + ')' : '')).join('\n') +
+      "\n\ncan't make it? please let me know so someone else can take ur spot: " + contactText + '.' +
+      "\nif the date or venue changes, i'll let u know on WhatsApp or IG.\n\nsee u soon,\nlaidoodle 来涂鸦";
+    const mail = {
+      to: s.email,
+      subject: "✎ u're in: " + event.shortTitle + ' · ' + event.dayLabel + ', ' + longDate_(event.date),
+      body: text,
+      htmlBody: html,
+      name: 'laidoodle',
+    };
+    if (host && isEmail_(host.split(',')[0].trim())) mail.replyTo = host.split(',')[0].trim(); // replies come to you
+    MailApp.sendEmail(mail);
+  } catch (err) {
+    console.error('confirmation email failed: ' + err);
+  }
+}
+
+function isEmail_(v) {
+  return /^[^\s@<>,;]+@[^\s@<>,;]+\.[^\s@<>,;]+$/.test(String(v));
+}
+
+// "2026-11-14" → "Nov 14"
+function longDate_(iso) {
+  const m = String(iso).match(/^(\d{4})-(\d\d)-(\d\d)$/);
+  if (!m) return String(iso);
+  return ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][Number(m[2]) - 1] + ' ' + Number(m[3]);
 }
 
 function esc_(v) {
