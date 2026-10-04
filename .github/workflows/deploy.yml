@@ -2,6 +2,7 @@
 #   main → https://doodledaron.github.io/laidoodle/      (prod)
 #   uat  → https://doodledaron.github.io/laidoodle/uat/  (testing)
 # A push to either branch rebuilds both, so each always shows its branch's latest commit.
+# GitHub only lets main publish to Pages, so a push to uat just asks main to rebuild (job "from-uat").
 # One-time: repo Settings → Pages → Source: "GitHub Actions".
 name: deploy
 
@@ -14,13 +15,24 @@ permissions:
   contents: read
   pages: write
   id-token: write
+  actions: write   # lets a uat push start the main build
 
 concurrency:
   group: pages
   cancel-in-progress: false
 
 jobs:
+  from-uat:
+    if: github.ref == 'refs/heads/uat'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Rebuild the site from main (it picks up the new uat too)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run deploy.yml --repo "${{ github.repository }}" --ref main
+
   build:
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:
       - name: Get main (prod)
