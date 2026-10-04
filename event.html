@@ -39,8 +39,9 @@
     const cost = e.fee > 0
       ? (e.feeIncludes ? `RM ${esc(e.fee)} · includes ${esc(e.feeIncludes)}` : `RM ${esc(e.fee)} commitment fee`)
       : 'free · just order something at the café ☕';
-    const taken = e.capacity - e.spotsLeft;
-    const pct = e.capacity ? Math.round((taken / e.capacity) * 100) : 0;
+    // past jams: the bar shows how many doodlers came (the sheet's doodlers column, or sign-ups if empty)
+    const taken = ended ? Number(e.doodlers) || 0 : e.capacity - e.spotsLeft;
+    const pct = e.capacity ? Math.min(100, Math.round((taken / e.capacity) * 100)) : (ended && taken ? 100 : 0);
     const status = ended ? 'this jam has ended' : e.spotsLeft > 0 ? `${e.spotsLeft} spots left` : 'this jam is full';
 
     document.title = `laidoodle · ${e.shortTitle}`;
@@ -63,13 +64,13 @@
         <div class="info__row"><span class="info__label">when</span><span class="info__value">${esc(e.dayLabel)}, ${p.monTitle} ${p.dayNum} · ${esc(e.timeRange)}</span></div>
         <div class="info__row"><span class="info__label">where</span><span class="info__value">${esc(e.venue)}${map}</span></div>
         <div class="info__row"><span class="info__label">cost</span><span class="info__value">${cost}</span></div>
-        <div class="info__row"><span class="info__label">spots</span><span class="spots"><span style="width:${pct}%"></span></span><span style="font-size:14px">${taken}/${e.capacity}</span></div>
+        <div class="info__row"><span class="info__label">spots</span><span class="spots"><span style="width:${pct}%"></span></span><span style="font-size:14px">${e.capacity ? `${taken}/${e.capacity}` : taken}</span></div>
       </div>
 
-      <section class="block">
+      ${ended ? '' : `<section class="block">
         <h2 class="h-sub" style="margin:0">how it works?</h2>
         <p>I will prepare big papers only (some pens) and it will be 1 long table or multiple. no one is forced to share stories, feel free to move around other tables if u feel uncomfy. make yourself home, no pressure to TALK &amp; SOCIALIZE.</p>
-      </section>
+      </section>`}
 
       ${showCafeSection ? `
       <section class="block">
@@ -80,11 +81,11 @@
         ${cafe.map((src, i) => `<div class="cafe-photos__item" role="img" aria-label="café photo ${i + 1}"><div class="past__photo placeholder"${LD.photoStyle(src)}></div></div>`).join('')}
       </div>` : ''}
 
-      <section class="block">
+      ${ended ? '' : `<section class="block">
         <h2 class="h-sub" style="margin:0">bring your own</h2>
         <div class="bring"><span>○ pens / markers</span><span>○ pencils</span><span>○ crayons</span></div>
         <div class="no-mess">✕ no watercolors or anything messy please</div>
-      </section>
+      </section>`}
 
       <div class="join-bar">
         <div class="join-bar__info">${status}<strong>${p.monTitle} ${p.dayNum} · ${esc(e.timeShort)}</strong></div>
