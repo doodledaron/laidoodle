@@ -12,20 +12,21 @@
 <script src="data.js"></script>
 </head>
 <body>
-<main class="screen form-screen">
+<main class="screen form-screen" id="app">
 
   <div class="form-top">
     <button type="button" id="back">← back</button>
-    <span id="counter">1 / 4</span>
+    <span id="counter"></span>
   </div>
   <div class="progress" aria-hidden="true"><div id="bar" style="width:25%"></div></div>
 
-  <form class="signup" id="signup" novalidate>
+  <form class="signup" id="signup" novalidate hidden>
 
     <!-- 1 · who -->
     <section class="step" data-step="who">
       <div class="step__body step__body--gap">
         <h1 class="h-step">hi! who's coming?</h1>
+        <input type="text" name="website" class="visually-hidden" tabindex="-1" autocomplete="off" aria-hidden="true">
         <div class="field">
           <label for="name">name / nickname</label>
           <input type="text" id="name" name="name" autocomplete="nickname" required>
@@ -82,6 +83,7 @@
         <label class="check check--big" id="paid-check"><input type="checkbox" name="paid" value="yes"><span class="check__box"></span>I have paid</label>
         <small class="err" id="paid-err">tick this once you've paid</small>
         <label class="upload"><input type="file" name="receipt" accept="image/*,application/pdf" id="receipt"><span id="receipt-label">+ upload receipt (optional)</span></label>
+        <small class="err" id="receipt-err">that file's too big, max 5 MB (a screenshot works!)</small>
       </div>
       <div class="step__foot"><button type="button" class="pill pill--ink" data-next>next →</button></div>
     </section>
@@ -90,6 +92,7 @@
     <section class="step" data-step="final" hidden>
       <div class="step__body step__body--gap" style="padding-top:26px;gap:14px">
         <h1 class="h-step">almost there</h1>
+        <div id="extra" style="display:contents"></div>
         <div class="notes">
           <label for="notes">anything i should know?</label>
           <small>whose friend u are, camera shy, food, access…</small>
@@ -99,7 +102,7 @@
         <label class="check" id="agree-fee"><input type="checkbox" name="agree_fee" required><span class="check__box"></span><span>I acknowledge that the payment is not refundable and it's just meant as a commitment fee (please do let the host know if you can't make it. host IG: <span class="host-ig"></span>)</span></label>
         <label class="check"><input type="checkbox" name="agree_photos" required><span class="check__box"></span>I acknowledge that pictures will be posted on social media (let me know in the "anything i should know" section if you're not comfortable)</label>
         <small class="err" id="agree-err">please tick all of these to join</small>
-        <small class="err" id="send-err">couldn't send that — try again, or DM <span class="host-ig"></span></small>
+        <small class="err" id="send-err">couldn't send that, try again or DM <span class="host-ig"></span></small>
       </div>
       <div class="step__foot"><button type="submit" class="pill pill--orange" id="submit">count me in ✎</button></div>
     </section>
@@ -117,33 +120,63 @@
 </main>
 
 <script>
-  const cfg = window.LAIDOODLE;
-  const e = LD.findEvent(new URLSearchParams(location.search).get('id'));
-  const p = LD.parts(e);
-  const paid = e.fee > 0;
+  const app = document.getElementById('app');
   const form = document.getElementById('signup');
   const steps = [...form.querySelectorAll('.step')];
-  const flow = ['who', 'doodly', ...(paid ? ['fee'] : []), 'final'];
-  let at = 0;
+  const id = new URLSearchParams(location.search).get('id');
+  const MAX_RECEIPT = 5 * 1024 * 1024;
+  let e, p, paid, flow, settings, at = 0;
 
-  document.title = `laidoodle · join ${e.shortTitle}`;
-  document.querySelectorAll('.host-ig').forEach(s => s.textContent = cfg.hostInstagram);
+  const loading = document.createElement('div');
+  loading.className = 'done';
+  loading.innerHTML = '<p>loading…</p>';
+  app.appendChild(loading);
 
-  // payment step content (paid jams), otherwise drop the fee acknowledgement
-  if (paid) {
-    document.getElementById('fee-name').textContent = e.shortTitle;
-    document.getElementById('fee-amount').textContent = `RM ${e.fee}`;
-    document.getElementById('fee-bank').textContent = cfg.payment.bankText;
-    if (cfg.payment.qrImage) document.getElementById('fee-qr').innerHTML = `<img src="${LD.esc(cfg.payment.qrImage)}" alt="payment QR">`;
-  } else {
-    const fee = document.getElementById('agree-fee');
-    fee.querySelector('input').required = false;
-    fee.remove();
+  LD.load().then(data => {
+    settings = data.settings;
+    e = data.events.find(x => x.id === id);
+    if (!e) return LD.message(app, "hmm, can't find that jam", 'it might have been moved or taken down.');
+    if (LD.isPast(e)) return LD.message(app, 'this jam has ended', 'catch the next one? check the upcoming jams ✎');
+    if (e.spotsLeft <= 0) return LD.message(app, 'this jam is full', `sorry! DM ${LD.esc(settings.hostInstagram)} if u want to be on the waitlist.`);
+    loading.remove();
+    init();
+  }).catch(() => LD.message(app, 'oops', LD.loadError()));
+
+  function init() {
+    p = LD.parts(e);
+    paid = e.fee > 0;
+    flow = ['who', 'doodly', ...(paid ? ['fee'] : []), 'final'];
+    document.title = `laidoodle · join ${e.shortTitle}`;
+    document.querySelectorAll('.host-ig').forEach(s => s.textContent = settings.hostInstagram);
+
+    // payment step content (paid jams), otherwise drop the fee acknowledgement
+    if (paid) {
+      document.getElementById('fee-name').textContent = e.shortTitle;
+      document.getElementById('fee-amount').textContent = `RM ${e.fee}`;
+      document.getElementById('fee-bank').textContent = settings.bankText;
+      if (settings.paymentQr) document.getElementById('fee-qr').innerHTML = `<img src="${LD.esc(settings.paymentQr)}" alt="payment QR">`;
+    } else {
+      document.getElementById('agree-fee').remove();
+    }
+
+    // this jam's extra questions, from the sheet's extra_questions column
+    document.getElementById('extra').innerHTML = e.extraQuestions.map((q, i) => `
+      <div class="notes">
+        <label for="extra-${i}">${LD.esc(q)}</label>
+        <textarea id="extra-${i}" data-question="${LD.esc(q)}" style="height:48px"></textarea>
+      </div>`).join('');
+
+    form.hidden = false;
+    show(0);
   }
 
   const receipt = document.getElementById('receipt');
   receipt.addEventListener('change', () => {
-    document.getElementById('receipt-label').textContent = receipt.files[0] ? `✓ ${receipt.files[0].name}` : '+ upload receipt (optional)';
+    const file = receipt.files[0];
+    const big = !!file && file.size > MAX_RECEIPT;
+    document.getElementById('receipt-err').classList.toggle('is-shown', big);
+    if (big) receipt.value = '';
+    document.getElementById('receipt-label').textContent = file && !big ? `✓ ${file.name}` : '+ upload receipt (optional)';
   });
 
   function show(i) {
@@ -203,8 +236,8 @@
   }));
 
   document.getElementById('back').addEventListener('click', () => {
-    if (at > 0) show(at - 1);
-    else history.length > 1 ? history.back() : (location.href = `event.html?id=${e.id}`);
+    if (flow && at > 0) show(at - 1);
+    else history.length > 1 ? history.back() : (location.href = id ? `event.html?id=${encodeURIComponent(id)}` : 'index.html');
   });
 
   // Enter in a text field moves to the next step instead of submitting early
@@ -215,37 +248,57 @@
     }
   });
 
+  function readFile(file) {
+    return new Promise((resolve, reject) => {
+      const r = new FileReader();
+      r.onload = () => resolve({ name: file.name, type: file.type, data: String(r.result).split(',')[1] });
+      r.onerror = () => reject(r.error);
+      r.readAsDataURL(file);
+    });
+  }
+
   form.addEventListener('submit', async ev => {
     ev.preventDefault();
     if (!valid('final')) return;
     const submit = document.getElementById('submit');
     const sendErr = document.getElementById('send-err');
     sendErr.classList.remove('is-shown');
+    submit.disabled = true;
+    submit.textContent = 'sending…';
 
-    if (cfg.signupEndpoint) {
-      const data = new FormData(form);
-      data.append('event_id', e.id);
-      data.append('event', e.shortTitle);
-      if (!paid) { data.delete('paid'); data.delete('receipt'); }
-      submit.disabled = true;
-      submit.textContent = 'sending…';
-      try {
-        const res = await fetch(cfg.signupEndpoint, { method: 'POST', body: data, headers: { Accept: 'application/json' } });
-        if (!res.ok) throw new Error(res.status);
-      } catch (err) {
-        submit.disabled = false;
-        submit.textContent = 'count me in ✎';
-        sendErr.classList.add('is-shown');
-        return;
+    try {
+      const payload = {
+        event_id: e.id,
+        name: document.getElementById('name').value.trim(), // form.name is the form's own name attribute
+        instagram: form.instagram.value.trim(),
+        phone: form.phone.value.trim(),
+        doodly: form.doodly.value,
+        paid: paid && form.paid.checked,
+        notes: form.notes.value.trim(),
+        extra: [...form.querySelectorAll('[data-question]')].map(t => ({ q: t.dataset.question, a: t.value.trim() })),
+        agree_safe: form.agree_safe.checked,
+        agree_fee: paid && form.agree_fee.checked,
+        agree_photos: form.agree_photos.checked,
+        website: form.website.value,
+        receipt: paid && receipt.files[0] ? await readFile(receipt.files[0]) : null,
+      };
+      const res = await LD.submit(payload);
+      if (!res.ok) {
+        if (res.error === 'full') return LD.message(app, 'aw, it just filled up', `someone grabbed the last spot. DM ${LD.esc(settings.hostInstagram)} to get on the waitlist!`);
+        if (res.error === 'closed') return LD.message(app, 'this jam has ended', 'catch the next one? check the upcoming jams ✎');
+        throw new Error(res.error);
       }
+    } catch (err) {
+      submit.disabled = false;
+      submit.textContent = 'count me in ✎';
+      sendErr.classList.add('is-shown');
+      return;
     }
 
     document.getElementById('done-text').textContent =
       `see u at ${e.shortTitle} on ${e.dayLabel}, ${p.monTitle} ${p.dayNum} · ${e.timeShort}! i'll reach out on IG / whatsapp with the café details.`;
     show(flow.length);
   });
-
-  show(0);
 </script>
 </body>
 </html>

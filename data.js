@@ -1,61 +1,24 @@
-// laidoodle content — edit this file to add/change jams. No build step needed.
+// laidoodle config. Events, sign-ups and settings live in your Google Sheet (see README.md).
 
 window.LAIDOODLE = {
-  hostInstagram: '@doodledaron',
+  // Your Apps Script web-app URL (Deploy → Manage deployments → Web app URL, ends in /exec).
+  // While this is empty the site shows the sample jams below and sign-ups are NOT saved.
+  apiUrl: '',
 
-  // Where sign-ups are POSTed as multipart form data (e.g. a Formspree or Google Apps Script URL).
-  // Leave empty and the form just shows the confirmation screen without sending anything.
-  signupEndpoint: '',
-
-  // Payment details shown on the commitment-fee step (paid jams only).
-  payment: {
-    qrImage: '',              // e.g. 'assets/payment-qr.png'
-    bankText: 'or bank transfer: account details',
+  // Sample data, used only while apiUrl is empty. Same shape as what the sheet returns.
+  sample: {
+    settings: {
+      hostInstagram: '@doodledaron',
+      bankText: 'or bank transfer: account details',
+      paymentQr: '',
+    },
+    events: [
+      { id: 'jam-05', shortTitle: 'Doodle Jam #05', title: 'autumn leaves & lemon tea', date: '2026-11-14', dayLabel: 'Sat', timeShort: '2pm', timeRange: '2–5pm', venueShort: 'café TBD', venue: 'café name, street', mapUrl: '', fee: 10, capacity: 8, spotsLeft: 4, photos: [], howItWorksPhoto: '', extraQuestions: [], doodlers: 4 },
+      { id: 'winter-zine', shortTitle: 'Winter zine jam', title: 'winter zine jam', date: '2026-12-06', dayLabel: 'Sun', timeShort: '3pm', timeRange: '3–6pm', venueShort: 'café TBD', venue: 'café TBD', mapUrl: '', fee: 0, capacity: 8, spotsLeft: 8, photos: [], howItWorksPhoto: '', extraQuestions: ['which part of town works best for u?'], doodlers: 0 },
+      { id: 'jam-04', shortTitle: '#04 picnic edition', title: 'picnic edition', date: '2025-10-12', dayLabel: 'Sun', timeShort: '2pm', timeRange: '2–5pm', venueShort: 'park', venue: 'park', mapUrl: '', fee: 0, capacity: 10, spotsLeft: 1, photos: [], howItWorksPhoto: '', extraQuestions: [], doodlers: 9 },
+      { id: 'jam-03', shortTitle: '#03 rainy café', title: 'rainy café', date: '2025-09-21', dayLabel: 'Sun', timeShort: '2pm', timeRange: '2–5pm', venueShort: 'café', venue: 'café', mapUrl: '', fee: 0, capacity: 8, spotsLeft: 2, photos: [], howItWorksPhoto: '', extraQuestions: [], doodlers: 6 },
+    ],
   },
-
-  upcoming: [
-    {
-      id: 'jam-05',
-      number: 5,
-      shortTitle: 'Doodle Jam #05',
-      title: 'autumn leaves & lemon tea',
-      date: '2026-11-16',
-      dayLabel: 'Sat',
-      timeShort: '2pm',
-      timeRange: '2–5pm',
-      venueShort: 'café TBD',
-      venue: 'café name, street',
-      mapUrl: '',             // google maps link; "→ map" shows when set
-      fee: 10,                // RM; 0 = free (sign-up skips the payment step)
-      capacity: 8,
-      spotsLeft: 4,
-      photos: [],             // image URLs for the swipe carousel; empty = placeholders
-      howItWorksPhoto: '',
-    },
-    {
-      id: 'winter-zine',
-      number: 6,
-      shortTitle: 'Winter zine jam',
-      title: 'winter zine jam',
-      date: '2026-12-07',
-      dayLabel: 'Sun',
-      timeShort: '3pm',
-      timeRange: '3–6pm',
-      venueShort: 'café TBD',
-      venue: 'café TBD',
-      mapUrl: '',
-      fee: 0,
-      capacity: 8,
-      spotsLeft: 8,
-      photos: [],
-      howItWorksPhoto: '',
-    },
-  ],
-
-  past: [
-    { title: '#04 picnic edition', date: 'Oct 12', doodlers: 9, photo: '' },
-    { title: '#03 rainy café', date: 'Sep 21', doodlers: 6, photo: '' },
-  ],
 };
 
 // Small helpers shared by every page.
@@ -66,9 +29,44 @@ window.LD = {
     return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   },
 
-  findEvent(id) {
-    const list = window.LAIDOODLE.upcoming;
-    return list.find(e => e.id === id) || list[0];
+  today() {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  },
+
+  isPast(e) {
+    return !!e.date && e.date < LD.today();
+  },
+
+  // → { settings, events, upcoming, past }. Rejects if the sheet can't be reached.
+  async load() {
+    const cfg = window.LAIDOODLE;
+    let data = cfg.sample;
+    if (cfg.apiUrl) {
+      const res = await fetch(cfg.apiUrl);
+      if (!res.ok) throw new Error(`events: ${res.status}`);
+      data = await res.json();
+    }
+    const events = data.events.filter(e => e.date).sort((a, b) => a.date.localeCompare(b.date));
+    return {
+      settings: data.settings,
+      events,
+      upcoming: events.filter(e => !LD.isPast(e)),
+      past: events.filter(e => LD.isPast(e)).reverse(),
+    };
+  },
+
+  // Sends a sign-up to the sheet. text/plain keeps it a "simple" request, which Apps Script accepts.
+  async submit(payload) {
+    const cfg = window.LAIDOODLE;
+    if (!cfg.apiUrl) return { ok: true, sample: true };
+    const res = await fetch(cfg.apiUrl, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(payload) });
+    if (!res.ok) throw new Error(`signup: ${res.status}`);
+    return res.json();
+  },
+
+  loadError() {
+    return `couldn't load the jams right now, try refreshing (or DM ${LD.esc(window.LAIDOODLE.sample.settings.hostInstagram)})`;
   },
 
   parts(e) {
@@ -84,5 +82,9 @@ window.LD = {
 
   photoStyle(url) {
     return url ? ` style="background-image:url('${LD.esc(url)}')"` : '';
+  },
+
+  message(el, title, text) {
+    el.innerHTML = `<div class="done"><h1 class="h-step">${title}</h1><p>${text}</p><a class="pill pill--ink" href="index.html" style="padding:10px 22px;font-size:18px;margin-top:10px">back to laidoodle</a></div>`;
   },
 };

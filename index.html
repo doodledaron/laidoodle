@@ -85,33 +85,44 @@
 </main>
 
 <script>
-  const { upcoming, past } = window.LAIDOODLE;
   const { esc } = LD;
+  const list = document.getElementById('event-list');
+  const pastList = document.getElementById('past-list');
+  list.innerHTML = '<div class="event-row__meta" style="padding:6px 2px">loading jams…</div>';
 
-  document.getElementById('event-list').innerHTML = upcoming.map(e => {
-    const p = LD.parts(e);
-    return `
-      <div class="event-row">
-        <a class="event-row__date" href="event.html?id=${esc(e.id)}">
-          <div class="event-row__mon">${p.mon}</div>
-          <div class="event-row__day">${p.day}</div>
-        </a>
-        <a class="event-row__body" href="event.html?id=${esc(e.id)}">
-          <div class="event-row__title">${esc(e.shortTitle)}</div>
-          <div class="event-row__meta">${esc(e.dayLabel)} ${esc(e.timeShort)} · ${esc(e.venueShort)} · ${LD.spotsText(e)}</div>
-        </a>
-        ${e.spotsLeft > 0
-          ? `<a class="pill pill--blue" href="signup.html?id=${esc(e.id)}">join</a>`
-          : `<span class="pill" style="padding:4px 10px;font-size:14px;border-radius:20px;color:#888">full</span>`}
-      </div>`;
-  }).join('');
+  LD.load().then(({ upcoming, past }) => {
+    list.innerHTML = upcoming.length ? upcoming.map(e => {
+      const p = LD.parts(e);
+      return `
+        <div class="event-row">
+          <a class="event-row__date" href="event.html?id=${esc(e.id)}">
+            <div class="event-row__mon">${p.mon}</div>
+            <div class="event-row__day">${p.day}</div>
+          </a>
+          <a class="event-row__body" href="event.html?id=${esc(e.id)}">
+            <div class="event-row__title">${esc(e.shortTitle)}</div>
+            <div class="event-row__meta">${esc(e.dayLabel)} ${esc(e.timeShort)} · ${esc(e.venueShort)} · ${LD.spotsText(e)}</div>
+          </a>
+          ${e.spotsLeft > 0
+            ? `<a class="pill pill--blue" href="signup.html?id=${esc(e.id)}">join</a>`
+            : `<span class="pill" style="padding:4px 10px;font-size:14px;border-radius:20px;color:#888">full</span>`}
+        </div>`;
+    }).join('') : '<div class="event-row__meta" style="padding:6px 2px">no jams planned yet, check back soon ✎</div>';
 
-  document.getElementById('past-list').innerHTML = past.map(j => `
-    <div class="past__item">
-      <div class="past__photo placeholder"${LD.photoStyle(j.photo)}>${j.photo ? '' : 'jam photo'}</div>
-      <div class="past__title">${esc(j.title)}</div>
-      <div class="past__meta">${esc(j.date)} · ${j.doodlers} doodlers</div>
-    </div>`).join('');
+    pastList.innerHTML = past.map(j => {
+      const p = LD.parts(j);
+      return `
+        <a class="past__item" href="event.html?id=${esc(j.id)}">
+          <div class="past__photo placeholder"${LD.photoStyle(j.photos[0])}>${j.photos[0] ? '' : 'jam photo'}</div>
+          <div class="past__title">${esc(j.shortTitle)}</div>
+          <div class="past__meta">${p.monTitle} ${p.dayNum} · ${j.doodlers} doodlers</div>
+        </a>`;
+    }).join('');
+    document.getElementById('past').hidden = !past.length;
+  }).catch(() => {
+    list.innerHTML = `<div class="event-row__meta" style="padding:6px 2px">${LD.loadError()}</div>`;
+    document.getElementById('past').hidden = true;
+  });
 
   // close the ≡ menu after picking a section
   document.querySelectorAll('.menu nav a').forEach(a => a.addEventListener('click', () => a.closest('details').open = false));
