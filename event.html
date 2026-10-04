@@ -29,12 +29,15 @@
     const p = LD.parts(e);
     const ended = LD.isPast(e);
     const open = !ended && e.spotsLeft > 0;
-    const photos = e.photos.length ? e.photos : ['', '', '', ''];
+    const cafe = e.cafePhotos || [];
+    // upcoming: café photos are the top carousel (no separate café section). past: event photos on top, café below.
+    const top = ended ? e.photos : (cafe.length ? cafe : e.photos);
+    const photos = top.length ? top : ['', '', '', ''];
+    const showCafeSection = ended && cafe.length > 0;
     const map = /^https?:\/\//.test(e.mapUrl) ? ` <a class="map-link" href="${esc(e.mapUrl)}" target="_blank" rel="noopener">📍 open map</a>` : '';
     const cost = e.fee > 0
       ? (e.feeIncludes ? `RM ${esc(e.fee)} · includes ${esc(e.feeIncludes)}` : `RM ${esc(e.fee)} commitment fee`)
       : 'free · just order something at the café ☕';
-    const cafe = e.cafePhotos || [];
     const taken = e.capacity - e.spotsLeft;
     const pct = e.capacity ? Math.round((taken / e.capacity) * 100) : 0;
     const status = ended ? 'this jam has ended' : e.spotsLeft > 0 ? `${e.spotsLeft} spots left` : 'this jam is full';
@@ -43,7 +46,7 @@
     app.innerHTML = `
       <div class="carousel">
         <div class="carousel__track" id="track">
-          ${photos.map(src => `<div class="carousel__slide placeholder"${LD.photoStyle(src)}>${src ? '' : 'event photos (swipe)'}</div>`).join('')}
+          ${photos.map(src => `<div class="carousel__slide placeholder"${LD.photoStyle(src)}>${src ? '' : ended ? 'event photos (swipe)' : 'café photos (swipe)'}</div>`).join('')}
         </div>
         <a class="carousel__back" href="index.html" aria-label="back">←</a>
         <div class="carousel__dots" id="dots"${photos.length > 1 ? '' : ' hidden'}>${photos.map((_, i) => `<span${i === 0 ? ' class="is-active"' : ''}></span>`).join('')}</div>
@@ -67,7 +70,7 @@
         <p>I will prepare big papers only (some pens) and it will be 1 long table or multiple. no one is forced to share stories, feel free to move around other tables if u feel uncomfy. make yourself home, no pressure to TALK &amp; SOCIALIZE.</p>
       </section>
 
-      ${cafe.length ? `
+      ${showCafeSection ? `
       <section class="block">
         <h2 class="h-sub" style="margin:0">the café</h2>
         <p>${esc(e.venue)}</p>

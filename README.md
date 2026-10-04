@@ -55,8 +55,8 @@ Changes show up on the site the next time someone loads the page. No redeploys.
 | `fee` | RM amount. `0` = free: the site says *"just order something at the café"* and the payment step is skipped | `10` |
 | `fee_includes` | paid jams only: what the fee covers, shown as "RM 10 · includes …" | `1 drink + snacks` |
 | `capacity` | max people. Spots left are counted automatically. | `8` |
-| `photos` | the swipe photos at the top of the event page: a Google Drive **folder** link (every image in it is shown, A→Z by file name), or single image links one per line | |
-| `cafe_photos` | photos for the "the café" section: a Drive folder link, or image links one per line. Leave empty to hide the section. | |
+| `photos` | event photos, shown at the top of a **past** jam's page: a Google Drive **folder** link (every image in it is shown, A→Z by file name), or single image links one per line | |
+| `cafe_photos` | café photos: a Drive folder link, or image links one per line. **Upcoming** jams show them as the swipe photos at the top of the page; **past** jams show them in a "the café" section below (hidden if empty). | |
 | `extra_questions` | extra questions just for this jam, one per line | `dietary needs?` |
 | `doodlers` | only for old jams from before sign-ups were in the sheet; otherwise leave it empty and it counts sign-ups | `9` |
 | `thumbnail` | the cover picture on the home page's upcoming list and past jams: one Drive image link (a folder link uses its first image). Optional: without it, upcoming jams show no picture and past jams use the first of `photos`. | |
