@@ -125,6 +125,10 @@
   </form>
 </main>
 
+<div class="lightbox loader-overlay" id="sending" hidden aria-label="sending">
+  <div style="width:100%;max-width:380px" id="sending-inner"></div>
+</div>
+
 <div class="lightbox" id="qr-box" hidden role="dialog" aria-modal="true" aria-label="payment QR">
   <div class="lightbox__card">
     <img id="qr-big" alt="payment QR">
@@ -145,8 +149,7 @@
   let e, p, paid, flow, settings, at = 0;
 
   const loading = document.createElement('div');
-  loading.className = 'done';
-  loading.innerHTML = '<p>loading…</p>';
+  loading.innerHTML = LD.loader('getting the form ready');
   app.appendChild(loading);
 
   LD.load().then(data => {
@@ -325,6 +328,9 @@
     sendErr.classList.remove('is-shown');
     submit.disabled = true;
     submit.textContent = 'sending…';
+    const overlay = document.getElementById('sending');
+    document.getElementById('sending-inner').innerHTML = LD.loader('sending ur sign-up');
+    overlay.hidden = false;
 
     try {
       const payload = {
@@ -353,6 +359,8 @@
       submit.textContent = 'count me in ✎';
       sendErr.classList.add('is-shown');
       return;
+    } finally {
+      overlay.hidden = true; // whatever happened, take the loader away
     }
 
     document.getElementById('done-text').textContent =

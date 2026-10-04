@@ -84,6 +84,14 @@ window.LD = {
     return url ? ` style="background-image:url('${LD.esc(url)}')"` : '';
   },
 
+  // The doodle-eye loader. Text gets animated dots after it, so pass it without "…".
+  loader(text) {
+    return `<div class="loader" role="status" aria-live="polite">
+      <div class="loader__paper"><div><img class="loader__eye" src="assets/loading-eye.jpg" srcset="assets/loading-eye.jpg 1x, assets/loading-eye@2x.jpg 2x" width="360" height="136" alt=""></div></div>
+      <div class="loader__text">${LD.esc(text)}</div>
+    </div>`;
+  },
+
   message(el, title, text) {
     el.innerHTML = `<div class="done"><h1 class="h-step">${title}</h1><p>${text}</p><a class="pill pill--ink" href="index.html" style="padding:10px 22px;font-size:18px;margin-top:10px">back to laidoodle</a></div>`;
   },

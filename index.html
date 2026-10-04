@@ -88,7 +88,7 @@
   const { esc } = LD;
   const list = document.getElementById('event-list');
   const pastList = document.getElementById('past-list');
-  list.innerHTML = '<div class="event-row__meta" style="padding:6px 2px">loading jams…</div>';
+  list.innerHTML = LD.loader('loading jams');
 
   LD.load().then(({ upcoming, past }) => {
     list.innerHTML = upcoming.length ? upcoming.map(e => {

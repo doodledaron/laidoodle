@@ -18,7 +18,7 @@
   const { esc } = LD;
   const app = document.getElementById('app');
   const id = new URLSearchParams(location.search).get('id');
-  app.innerHTML = '<div class="done"><p>loading jam…</p></div>';
+  app.innerHTML = LD.loader('loading jam');
 
   LD.load().then(({ events }) => {
     const e = events.find(x => x.id === id);

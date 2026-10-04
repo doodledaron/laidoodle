@@ -5,6 +5,7 @@
   --paper: #f5eedc;
   --paper-torn: #efe4cb;
   --tape: #e9dcc0;
+  --eye-paper: #c0a052; /* sampled from the loading-eye photo */
   --rule: #d9d0bb;
   --blue: #2b3a9e;
   --orange: #e8603c;
@@ -333,6 +334,7 @@ button { font: inherit; color: inherit; }
 .progress div { height: 100%; background: var(--orange); transition: width .25s; }
 
 .signup { flex: 1; display: flex; flex-direction: column; }
+.signup[hidden] { display: none; }
 .step { flex: 1; display: flex; flex-direction: column; }
 .step[hidden] { display: none; }
 .step__body { padding: 30px 22px 0; flex: 1; display: flex; flex-direction: column; }
@@ -485,5 +487,62 @@ button { font: inherit; color: inherit; }
 
 .done { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 40px 28px; gap: 12px; }
 .done p { font-size: 16px; line-height: 1.4; color: var(--body); margin: 0; }
+
+/* ---------- loader: the doodle eye on torn mustard paper ---------- */
+
+.loader {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  padding: 28px 0 18px;
+}
+.loader__paper {
+  width: min(280px, 82%);
+  filter: drop-shadow(4px 4px 0 var(--ink));
+  animation: loader-wobble 2.4s ease-in-out infinite;
+}
+.loader__paper > div {
+  background: var(--eye-paper);
+  padding: 16px 6px;
+  clip-path: var(--torn-card);
+}
+.loader__eye {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 360 / 136;
+  /* soften the crop line on the left/right so the photo melts into the paper */
+  -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 9%, #000 91%, transparent 100%);
+  mask-image: linear-gradient(90deg, transparent 0, #000 9%, #000 91%, transparent 100%);
+  transform-origin: 50% 46%;
+  animation: loader-blink 2.6s ease-in-out infinite;
+}
+.loader__text { font-size: 17px; color: var(--body); }
+.loader__text::after {
+  content: "";
+  display: inline-block;
+  width: 1.2em;
+  text-align: left;
+  animation: loader-dots 1.2s steps(4, end) infinite;
+}
+@keyframes loader-wobble {
+  0%, 100% { transform: rotate(-2deg); }
+  50% { transform: rotate(1.5deg) translateY(-2px); }
+}
+@keyframes loader-blink {
+  0%, 84%, 100% { transform: scaleY(1); }
+  89% { transform: scaleY(.08); }
+  94% { transform: scaleY(1); }
+}
+@keyframes loader-dots {
+  0% { content: ""; } 25% { content: "."; } 50% { content: ".."; } 75%, 100% { content: "..."; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .loader__paper, .loader__eye { animation: none; }
+  .loader__paper { transform: rotate(-2deg); }
+}
+.loader-overlay .loader { padding: 0; }
+.loader-overlay .loader__text { color: #fff; font-size: 19px; }
 
 .visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
