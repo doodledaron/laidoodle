@@ -30,8 +30,9 @@
     const ended = LD.isPast(e);
     const open = !ended && e.spotsLeft > 0;
     const cafe = e.cafePhotos || [];
-    // upcoming: café photos are the top carousel (no separate café section). past: event photos on top, café below.
-    const top = ended ? e.photos : (cafe.length ? cafe : e.photos);
+    // upcoming: only the café photos folder, as the top carousel (no separate café section).
+    // past: event photos on top, café section below.
+    const top = ended ? e.photos : cafe;
     const photos = top.length ? top : ['', '', '', ''];
     const showCafeSection = ended && cafe.length > 0;
     const map = /^https?:\/\//.test(e.mapUrl) ? ` <a class="map-link" href="${esc(e.mapUrl)}" target="_blank" rel="noopener">📍 open map</a>` : '';
