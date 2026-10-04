@@ -14,8 +14,8 @@
 
 const EVENT_HEADERS = [
   'id', 'status', 'short_title', 'title', 'date', 'start_time', 'end_time',
-  'venue_short', 'venue', 'map_url', 'fee', 'capacity',
-  'photos', 'how_it_works_photo', 'extra_questions', 'doodlers',
+  'venue_short', 'venue', 'map_url', 'fee', 'fee_includes', 'capacity',
+  'photos', 'cafe_photos', 'extra_questions', 'doodlers',
 ];
 
 const SIGNUP_HEADERS = [
@@ -41,13 +41,18 @@ function setup() {
   const ss = SpreadsheetApp.getActive();
 
   const events = ensureSheet_(ss, 'Events', EVENT_HEADERS);
+  upgradeHeaders_(events, EVENT_HEADERS, { how_it_works_photo: 'cafe_photos' });
   if (events.getLastRow() === 1) {
-    events.getRange(2, 1, 4, EVENT_HEADERS.length).setValues([
-      ['jam-05', '', 'Doodle Jam #05', 'autumn leaves & lemon tea', '2026-11-14', '2pm', '5pm', 'café TBD', 'café name, street', '', 10, 8, '', '', '', ''],
-      ['winter-zine', '', 'Winter zine jam', 'winter zine jam', '2026-12-06', '3pm', '6pm', 'café TBD', 'café TBD', '', 0, 8, '', '', '', ''],
-      ['jam-04', '', '#04 picnic edition', 'picnic edition', '2025-10-12', '2pm', '5pm', 'park', 'park', '', 0, 10, '', '', '', 9],
-      ['jam-03', '', '#03 rainy café', 'rainy café', '2025-09-21', '2pm', '5pm', 'café', 'café', '', 0, 8, '', '', '', 6],
-    ]);
+    [
+      ['jam-05', '', 'Doodle Jam #05', 'autumn leaves & lemon tea', '2026-11-14', '2pm', '5pm', 'café TBD', 'café name, street', '', 10, '1 drink', 8, '', '', '', ''],
+      ['winter-zine', '', 'Winter zine jam', 'winter zine jam', '2026-12-06', '3pm', '6pm', 'café TBD', 'café TBD', '', 0, '', 8, '', '', '', ''],
+      ['jam-04', '', '#04 picnic edition', 'picnic edition', '2025-10-12', '2pm', '5pm', 'park', 'park', '', 0, '', 10, '', '', '', 9],
+      ['jam-03', '', '#03 rainy café', 'rainy café', '2025-09-21', '2pm', '5pm', 'café', 'café', '', 0, '', 8, '', '', '', 6],
+    ].forEach(v => {
+      const o = {};
+      EVENT_HEADERS.forEach((k, n) => { o[k] = v[n]; });
+      appendByHeader_(events, o); // by column name, so it works whatever order the columns are in
+    });
   }
   events.getRange('E:E').setNumberFormat('yyyy-mm-dd');
 
@@ -73,6 +78,24 @@ function ensureSheet_(ss, name, headers) {
 }
 
 // Settings → receipt_folder (a Drive folder link or ID), else the default above.
+// Brings an older sheet's header row up to date: renames old columns and adds missing ones at the end.
+// Only the header row changes; your data rows stay where they are.
+function upgradeHeaders_(sheet, headers, renames) {
+  const width = sheet.getLastColumn();
+  const row = sheet.getRange(1, 1, 1, width).getValues()[0].map(v => String(v).trim());
+  Object.keys(renames).forEach(from => {
+    const i = row.indexOf(from);
+    if (i !== -1 && row.indexOf(renames[from]) === -1) {
+      sheet.getRange(1, i + 1).setValue(renames[from]);
+      row[i] = renames[from];
+    }
+  });
+  headers.filter(h => row.indexOf(h) === -1).forEach(h => {
+    row.push(h);
+    sheet.getRange(1, row.length).setValue(h).setFontWeight('bold');
+  });
+}
+
 function receiptFolder_(ss) {
   const value = String(settingsMap_(ss).receipt_folder || '').trim();
   const m = value.match(/folders\/([\w-]+)|[?&]id=([\w-]+)/);
@@ -117,8 +140,9 @@ function toEvent_(r, taken, tz) {
     fee: Number(r.fee) || 0,
     capacity: capacity,
     spotsLeft: Math.max(0, capacity - taken),
-    photos: lines_(r.photos).map(imageUrl_),
-    howItWorksPhoto: imageUrl_(String(r.how_it_works_photo)),
+    feeIncludes: String(r.fee_includes || '').trim(),
+    photos: photoList_(r.photos),
+    cafePhotos: photoList_(r.cafe_photos),
     extraQuestions: lines_(r.extra_questions),
     doodlers: r.doodlers === '' ? taken : Number(r.doodlers),
   };
@@ -246,6 +270,38 @@ function asTime_(v, tz) {
 
 function lines_(v) {
   return String(v || '').split(/\n|\s*;\s*/).map(s => s.trim()).filter(Boolean);
+}
+
+// A cell of photos → image URLs. Each line is a Drive folder link (every image inside, A→Z by name)
+// or a single image link. Folder listings are cached for 10 minutes so pages stay fast.
+function photoList_(cell) {
+  const out = [];
+  lines_(cell).forEach(line => {
+    const folder = line.match(/drive\.google\.com\/drive\/(?:u\/\d+\/)?folders\/([\w-]+)/);
+    if (folder) folderImages_(folder[1]).forEach(u => out.push(u));
+    else out.push(imageUrl_(line));
+  });
+  return out;
+}
+
+function folderImages_(id) {
+  const cache = CacheService.getScriptCache();
+  const hit = cache.get('folder:' + id);
+  if (hit) return JSON.parse(hit);
+  const files = [];
+  try {
+    const it = DriveApp.getFolderById(id).getFiles();
+    while (it.hasNext()) {
+      const f = it.next();
+      if (String(f.getMimeType()).indexOf('image/') === 0) files.push({ name: f.getName(), id: f.getId() });
+    }
+  } catch (err) {
+    return []; // wrong link or no access: show no photos rather than break the page
+  }
+  const urls = files.sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }))
+    .map(f => 'https://lh3.googleusercontent.com/d/' + f.id);
+  cache.put('folder:' + id, JSON.stringify(urls), 600);
+  return urls;
 }
 
 // Google Drive share links → direct image URLs (the file must be shared as "anyone with the link").

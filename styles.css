@@ -273,7 +273,9 @@ button { font: inherit; color: inherit; }
 
 .block { padding: 20px 18px 0; }
 .block p { font-size: 15px; line-height: 1.45; color: #333; margin: 4px 0 0; }
-.block__photo { margin-top: 10px; height: 110px; border: 2px solid var(--ink); border-radius: 12px; }
+.cafe-photos { margin-top: 10px; }
+.cafe-photos__item { flex: none; width: 200px; scroll-snap-align: start; }
+.cafe-photos .past__photo { height: 150px; }
 .bring { font-size: 16px; line-height: 1.55; }
 .bring span { white-space: nowrap; margin-right: 12px; }
 .no-mess { margin-top: 6px; font-size: 14px; color: var(--orange); }

@@ -31,7 +31,10 @@
     const open = !ended && e.spotsLeft > 0;
     const photos = e.photos.length ? e.photos : ['', '', '', ''];
     const map = /^https?:\/\//.test(e.mapUrl) ? ` <a href="${esc(e.mapUrl)}" target="_blank" rel="noopener">→ map</a>` : '';
-    const cost = e.fee > 0 ? `RM ${esc(e.fee)} commitment fee` : 'free';
+    const cost = e.fee > 0
+      ? (e.feeIncludes ? `RM ${esc(e.fee)} · includes ${esc(e.feeIncludes)}` : `RM ${esc(e.fee)} commitment fee`)
+      : 'free · just order something at the café ☕';
+    const cafe = e.cafePhotos || [];
     const taken = e.capacity - e.spotsLeft;
     const pct = e.capacity ? Math.round((taken / e.capacity) * 100) : 0;
     const status = ended ? 'this jam has ended' : e.spotsLeft > 0 ? `${e.spotsLeft} spots left` : 'this jam is full';
@@ -62,8 +65,16 @@
       <section class="block">
         <h2 class="h-sub" style="margin:0">how it works?</h2>
         <p>I will prepare big papers only (some pens) and it will be 1 long table or multiple. no one is forced to share stories, feel free to move around other tables if u feel uncomfy. make yourself home, no pressure to TALK &amp; SOCIALIZE.</p>
-        <div class="block__photo placeholder"${LD.photoStyle(e.howItWorksPhoto)}>${e.howItWorksPhoto ? '' : 'photo: long table + big paper'}</div>
       </section>
+
+      ${cafe.length ? `
+      <section class="block">
+        <h2 class="h-sub" style="margin:0">the café</h2>
+        <p>${esc(e.venue)}</p>
+      </section>
+      <div class="past cafe-photos">
+        ${cafe.map((src, i) => `<a class="cafe-photos__item" href="${esc(src)}" target="_blank" rel="noopener" aria-label="café photo ${i + 1}"><div class="past__photo placeholder"${LD.photoStyle(src)}></div></a>`).join('')}
+      </div>` : ''}
 
       <section class="block">
         <h2 class="h-sub" style="margin:0">bring your own</h2>
