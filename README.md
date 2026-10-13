@@ -83,6 +83,17 @@ Every new sign-up emails you the details: name, IG (tap to open), WhatsApp (tap 
 
 The form asks for an email address. Right after signing up, the person gets a "u're in!" email with when / where (with the map link) / cost / what to bring, plus: *can't make it? let me know on WhatsApp `host_whatsapp` or IG `host_instagram`*. If they reply, the reply goes to your `notify_email`.
 
+### Reminder emails (3 days + 1 day before)
+
+Every day around **10am** the script checks the jams. For a jam that's exactly 3 days or 1 day away, everyone signed up gets a reminder: when / where / cost / bring, plus a highlighted *"can't make it? please tell me asap on WhatsApp … or IG … so someone else can take ur spot"*.
+
+- **Skipped:** cancelled sign-ups (`isCancelled? = Y`), hidden or past jams, and people who signed up that same day (they just got the confirmation).
+- **Never twice:** the send time goes into the `reminded_3d` / `reminded_1d` columns in Signups. Clear a cell to send that reminder again the next morning.
+- **Summary to you:** on days reminders go out, `notify_email` gets one email listing who was reminded. It also lists anyone with **no email** (people who signed up before the email field existed), with WhatsApp links so you can message them yourself.
+- **Check it:** in Apps Script, run **`testReminder`**. It emails *you* a sample reminder for the next jam, marks nothing, and its log shows who the timer would remind today and whether the timer is on.
+- **Change the days:** Settings → `reminder_days` (e.g. `7,3,1`). `off` stops reminders.
+- The daily timer is started by `setup` (Apps Script → ⏰ Triggers shows it). It runs the latest **saved** code, so no redeploy is needed for reminders.
+
 ### Settings tab
 
 | key | value |
@@ -93,6 +104,7 @@ The form asks for an email address. Right after signing up, the person gets a "u
 | `receipt_folder` | Drive folder link where receipts are saved. Keep this folder's sharing **Restricted**: receipts have people's names and bank details. |
 | `notify_email` | who gets an email for every new sign-up (filled with your own address by `setup`). Several addresses: separate with commas. `off` stops the emails. |
 | `host_whatsapp` | your WhatsApp number (`setup` fills in `011 39214061` if empty). Shown in the confirmation email as "questions? ask me anything" and "can't make it?". Local numbers starting with 0 get Malaysia's 60 added for the chat link. `off` hides it. |
+| `reminder_days` | days before a jam to send reminder emails (default `3,1`). `off` stops them. |
 
 ### If you edit `Code.gs` later
 

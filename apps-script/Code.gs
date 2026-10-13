@@ -6,6 +6,8 @@
  *   Signups  – filled in automatically. Add your own columns freely; put Y in "isCancelled? (Y/N)" to free up a spot.
  *   Settings – host_instagram, bank_text, payment_qr, receipt_folder (where receipts are saved).
  *
+ * Reminder emails: setup() also starts a daily timer (~10am) that runs sendReminders().
+ *
  * First time: run setup() once, then Deploy → New deployment → Web app
  *   (Execute as: Me, Who has access: Anyone) and put the URL into data.js → apiUrl.
  * After editing THIS file: Deploy → Manage deployments → edit → Version: New version.
@@ -34,6 +36,7 @@ const SETTINGS_ROWS = [
   ['receipt_folder', 'https://drive.google.com/drive/folders/1mKrXlb5sxRFExk9kNA22RzQjDfi9W45D'],
   ['notify_email', ''], // filled with your own email by setup(); "off" turns sign-up emails off
   ['host_whatsapp', '011 39214061'], // your WhatsApp, in the confirmation email ("ask me anything"); "off" hides it
+  ['reminder_days', '3,1'], // reminder emails this many days before a jam; "off" stops them
 ];
 
 // Used when the Settings tab has no receipt_folder row.
@@ -74,12 +77,19 @@ function setup() {
   SETTINGS_ROWS.forEach(r => {
     const value = r[0] === 'notify_email' ? Session.getEffectiveUser().getEmail() : r[1];
     const i = keys.indexOf(r[0]);
-    if (i === -1) settings.appendRow([r[0], value]);                                   // add missing rows
+    if (i === -1 && r[0] === 'reminder_days') {                                        // as text, so "3,1" doesn't turn into 31
+      settings.appendRow([r[0], '']);
+      settings.getRange(settings.getLastRow(), 2).setNumberFormat('@').setValue(value);
+    } else if (i === -1) settings.appendRow([r[0], value]);                            // add missing rows
     else if (r[0] === 'host_whatsapp' && !String(current[i][1]).trim()) settings.getRange(i + 1, 2).setValue(value); // fill an empty one
   });
 
+  upgradeHeaders_(signups, reminderColumns_(ss), {}); // reminded_3d, reminded_1d: when each reminder went out
+  installReminders_(ss);
+
   receiptFolder_(ss); // fails here (not at sign-up time) if the folder can't be reached
-  SpreadsheetApp.getUi().alert('laidoodle is set up ✎ Now: Deploy → New deployment → Web app.');
+  SpreadsheetApp.getUi().alert('laidoodle is set up ✎ Reminder emails go out every day around 10am.\n' +
+    'First time? Deploy → New deployment → Web app. Edited the code? Deploy → Manage deployments → New version.');
 }
 
 function ensureSheet_(ss, name, headers) {
@@ -303,47 +313,58 @@ function testEmail() {
 
 // ---------- confirmation email to the person who signed up ----------
 
+// The when / where / cost / bring table and your contact links, shared by the confirmation and reminder emails.
+function jamEmailParts_(ss, event, s) {
+  const st = settingsMap_(ss);
+  const ig = String(st.host_instagram || '').trim();
+  const wa = /^(off|no|none)$/i.test(String(st.host_whatsapp || '').trim()) ? '' : String(st.host_whatsapp || '').trim();
+  const host = String(st.notify_email || '').trim();
+  const when = event.dayLabel + ', ' + longDate_(event.date) + ' · ' + event.timeRange;
+  let cost = event.fee > 0 ? 'RM ' + event.fee + (event.feeIncludes ? ' · includes ' + event.feeIncludes : ' commitment fee') + (s.paid === 'yes' ? ' (paid ✓)' : '')
+    : 'free · just order something at the café ☕';
+  if (event.costRemark) cost += '\n+ ' + event.costRemark;
+
+  // [label, text, link?]
+  const details = [
+    ['when', when],
+    ['where', event.venue, /^https?:\/\//.test(event.mapUrl) ? event.mapUrl : ''],
+    ['cost', cost],
+    ['bring', 'your own pens / markers / pencils / crayons (no watercolors or anything messy please)'],
+  ];
+  const contact = [];
+  if (wa) contact.push(['WhatsApp', wa, waLink_(wa)]);
+  if (ig) contact.push(['IG', ig, 'https://instagram.com/' + encodeURIComponent(ig.replace(/^@/, ''))]);
+
+  const cell = v => esc_(v).replace(/\n/g, '<br>');
+  const link = r => r[2] ? '<a href="' + esc_(r[2]) + '" style="color:#2b3a9e">' + cell(r[1]) + '</a>' : cell(r[1]);
+  const replyTo = host && isEmail_(host.split(',')[0].trim()) ? host.split(',')[0].trim() : '';
+  return {
+    contact: contact,
+    contactText: contact.map(c => c[0] + ' ' + c[1]).join(' or ') || 'DM me',
+    contactHtml: fallback => contact.length ? contact.map(c => c[0] + ' ' + link(c)).join(' or ') : fallback,
+    tableHtml: '<table cellpadding="6" style="border-collapse:collapse;background:#f5eedc;border-radius:10px">' +
+      details.map(r => '<tr><td style="color:#888;vertical-align:top">' + r[0] + '</td><td>' + link(r) + '</td></tr>').join('') +
+      '</table>',
+    tableText: details.map(r => r[0] + ': ' + r[1] + (r[2] ? ' (' + r[2] + ')' : '')).join('\n'),
+    replyTo: replyTo, // replies come to you
+  };
+}
+
 function confirmToDoodler_(ss, event, s) {
   try {
-    const st = settingsMap_(ss);
-    const ig = String(st.host_instagram || '').trim();
-    const wa = /^(off|no|none)$/i.test(String(st.host_whatsapp || '').trim()) ? '' : String(st.host_whatsapp || '').trim();
-    const host = String(st.notify_email || '').trim();
-    const when = event.dayLabel + ', ' + longDate_(event.date) + ' · ' + event.timeRange;
-    let cost = event.fee > 0 ? 'RM ' + event.fee + (event.feeIncludes ? ' · includes ' + event.feeIncludes : ' commitment fee') + (s.paid === 'yes' ? ' (paid ✓)' : '')
-      : 'free · just order something at the café ☕';
-    if (event.costRemark) cost += '\n+ ' + event.costRemark;
-
-    // [label, text, link?]
-    const details = [
-      ['when', when],
-      ['where', event.venue, /^https?:\/\//.test(event.mapUrl) ? event.mapUrl : ''],
-      ['cost', cost],
-      ['bring', 'your own pens / markers / pencils / crayons (no watercolors or anything messy please)'],
-    ];
-    const contact = [];
-    if (wa) contact.push(['WhatsApp', wa, waLink_(wa)]);
-    if (ig) contact.push(['IG', ig, 'https://instagram.com/' + encodeURIComponent(ig.replace(/^@/, ''))]);
-    const contactText = contact.map(c => c[0] + ' ' + c[1]).join(' or ') || 'DM me';
-
-    const cell = v => esc_(v).replace(/\n/g, '<br>');
-    const link = r => r[2] ? '<a href="' + esc_(r[2]) + '" style="color:#2b3a9e">' + cell(r[1]) + '</a>' : cell(r[1]);
+    const x = jamEmailParts_(ss, event, s);
     const html = '<div style="font-family:sans-serif;font-size:15px;line-height:1.5;color:#1d1d1d;max-width:480px">' +
       '<p style="font-size:20px;margin:0 0 8px">hi ' + esc_(s.name) + ', u\'re in! ✎</p>' +
       '<p style="margin:0 0 14px">see u at <b>' + esc_(event.shortTitle) + '</b>' + (event.title && event.title !== event.shortTitle ? ' (' + esc_(event.title) + ')' : '') + '.</p>' +
-      '<table cellpadding="6" style="border-collapse:collapse;background:#f5eedc;border-radius:10px">' +
-      details.map(r => '<tr><td style="color:#888;vertical-align:top">' + r[0] + '</td><td>' + link(r) + '</td></tr>').join('') +
-      '</table>' +
-      '<p style="margin:16px 0 0"><b>questions? ask me anything</b> on ' +
-      (contact.length ? contact.map(c => c[0] + ' ' + link(c)).join(' or ') : 'IG') + ' ✎</p>' +
-      '<p style="margin:10px 0 0"><b>can\'t make it?</b> please let me know so someone else can take ur spot: ' +
-      (contact.length ? contact.map(c => c[0] + ' ' + link(c)).join(' or ') : 'DM me') + '.</p>' +
+      x.tableHtml +
+      '<p style="margin:16px 0 0"><b>questions? ask me anything</b> on ' + x.contactHtml('IG') + ' ✎</p>' +
+      '<p style="margin:10px 0 0"><b>can\'t make it?</b> please let me know so someone else can take ur spot: ' + x.contactHtml('DM me') + '.</p>' +
       '<p style="margin:10px 0 0;color:#666">if the date or venue changes, i\'ll let u know on WhatsApp or IG.</p>' +
       '<p style="margin:16px 0 0">see u soon,<br>laidoodle 来涂鸦</p></div>';
     const text = 'hi ' + s.name + ", u're in! ✎\n\nsee u at " + event.shortTitle + '.\n\n' +
-      details.map(r => r[0] + ': ' + r[1] + (r[2] ? ' (' + r[2] + ')' : '')).join('\n') +
-      '\n\nquestions? ask me anything on ' + contactText + ' ✎' +
-      "\ncan't make it? please let me know so someone else can take ur spot: " + contactText + '.' +
+      x.tableText +
+      '\n\nquestions? ask me anything on ' + x.contactText + ' ✎' +
+      "\ncan't make it? please let me know so someone else can take ur spot: " + x.contactText + '.' +
       "\nif the date or venue changes, i'll let u know on WhatsApp or IG.\n\nsee u soon,\nlaidoodle 来涂鸦";
     const mail = {
       to: s.email,
@@ -352,11 +373,180 @@ function confirmToDoodler_(ss, event, s) {
       htmlBody: html,
       name: 'laidoodle',
     };
-    if (host && isEmail_(host.split(',')[0].trim())) mail.replyTo = host.split(',')[0].trim(); // replies come to you
+    if (x.replyTo) mail.replyTo = x.replyTo;
     MailApp.sendEmail(mail);
   } catch (err) {
     console.error('confirmation email failed: ' + err);
   }
+}
+
+// ---------- reminder emails (3 days and 1 day before; Settings → reminder_days) ----------
+
+// Runs every day around 10am (setup() starts the timer). Emails everyone signed up for a jam that is
+// exactly N days away, for each N in reminder_days, and writes the send time into reminded_Nd so nobody
+// gets the same reminder twice. Then sends you a short summary.
+function sendReminders() {
+  runReminders_(false);
+}
+
+function runReminders_(dryRun) {
+  const ss = SpreadsheetApp.getActive();
+  const tz = ss.getSpreadsheetTimeZone();
+  const days = reminderDays_(ss);
+  const result = { sent: [], noEmail: [], failed: [] };
+  if (!days.length) return result;
+
+  const signups = ss.getSheetByName('Signups');
+  if (!dryRun) upgradeHeaders_(signups, reminderColumns_(ss), {}); // e.g. you changed reminder_days to 7,3,1
+  const headers = signups.getRange(1, 1, 1, signups.getLastColumn()).getValues()[0].map(key_);
+  const now = new Date();
+  const today = Utilities.formatDate(now, tz, 'yyyy-MM-dd');
+  const counts = signupCounts_(ss);
+
+  // jams (not hidden) that are exactly N days away today
+  const due = {};
+  readRows_(ss.getSheetByName('Events')).forEach(r => {
+    if (!r.id || isHiddenRow_(r)) return;
+    const left = daysBetween_(today, asDate_(r.date, tz));
+    if (days.indexOf(left) !== -1) due[String(r.id).trim()] = { event: toEvent_(r, counts[r.id] || 0, tz), days: left };
+  });
+
+  readRows_(signups).forEach((s, i) => {
+    const jam = due[String(s.event_id).trim()];
+    if (!jam || isYes_(s.is_cancelled) || /^cancell?ed$/i.test(String(s.status))) return;
+    const col = headers.indexOf('reminded_' + jam.days + 'd');
+    if (col === -1 || String(s['reminded_' + jam.days + 'd']).trim()) return;      // already reminded
+    if (s.timestamp instanceof Date && Utilities.formatDate(s.timestamp, tz, 'yyyy-MM-dd') >= today) return; // signed up today: the confirmation is enough
+    const who = { name: s.name, phone: s.phone, jam: jam };
+    const email = String(s.email || '').trim();
+    if (!isEmail_(email)) return result.noEmail.push(who);
+    if (dryRun) return result.sent.push(who);
+    try {
+      if (MailApp.getRemainingDailyQuota() < 2) throw new Error('daily email limit reached');
+      MailApp.sendEmail(reminderMail_(ss, jam.event, { name: s.name, email: email, paid: String(s.paid) }, jam.days));
+      signups.getRange(i + 2, col + 1).setValue(now);
+      result.sent.push(who);
+    } catch (err) {
+      console.error('reminder to ' + email + ' failed: ' + err);
+      result.failed.push(Object.assign(who, { error: String(err) }));
+    }
+  });
+
+  if (!dryRun) remindSummary_(ss, result);
+  return result;
+}
+
+function reminderMail_(ss, event, s, days) {
+  const x = jamEmailParts_(ss, event, s);
+  const soon = days === 0 ? 'today' : days === 1 ? 'tomorrow' : 'in ' + days + ' days';
+  const html = '<div style="font-family:sans-serif;font-size:15px;line-height:1.5;color:#1d1d1d;max-width:480px">' +
+    '<p style="font-size:20px;margin:0 0 8px">hi ' + esc_(s.name) + ' ✎</p>' +
+    '<p style="margin:0 0 14px">just a reminder: <b>' + esc_(event.shortTitle) + '</b> is <b>' + soon + '</b>!</p>' +
+    x.tableHtml +
+    '<p style="margin:16px 0 0;padding:10px 12px;background:#fff3a8;border:2px dashed #e0a800;border-radius:10px">' +
+    '<b>can\'t make it?</b> please tell me asap on ' + x.contactHtml('DM me') + ' so someone else can take ur spot 🙏</p>' +
+    '<p style="margin:12px 0 0"><b>questions? ask me anything</b> ✎</p>' +
+    '<p style="margin:16px 0 0">see u soon,<br>laidoodle 来涂鸦</p></div>';
+  const text = 'hi ' + s.name + ' ✎\n\njust a reminder: ' + event.shortTitle + ' is ' + soon + '!\n\n' +
+    x.tableText +
+    "\n\n‼ can't make it? please tell me asap on " + x.contactText + ' so someone else can take ur spot 🙏' +
+    '\nquestions? ask me anything ✎\n\nsee u soon,\nlaidoodle 来涂鸦';
+  const mail = {
+    to: s.email,
+    subject: (days === 1 ? '✎ see u tomorrow: ' : days === 0 ? '✎ see u today: ' : '✎ ' + days + ' days to go: ') +
+      event.shortTitle + ' · ' + event.dayLabel + ', ' + longDate_(event.date),
+    body: text,
+    htmlBody: html,
+    name: 'laidoodle',
+  };
+  if (x.replyTo) mail.replyTo = x.replyTo;
+  return mail;
+}
+
+// One email to you on days reminders go out: who got one, and who has no email (message them yourself).
+function remindSummary_(ss, r) {
+  try {
+    if (!r.sent.length && !r.noEmail.length && !r.failed.length) return;
+    const to = String(settingsMap_(ss).notify_email || '').trim() || Session.getEffectiveUser().getEmail();
+    if (!to || /^(off|no|n|none)$/i.test(to)) return;
+    const jamName = j => j.event.shortTitle + ' (' + (j.days === 1 ? 'tomorrow' : j.days + ' days to go') + ')';
+    const groups = {};
+    ['sent', 'noEmail', 'failed'].forEach(kind => r[kind].forEach(w => {
+      const g = groups[w.jam.event.id] = groups[w.jam.event.id] || { jam: w.jam, sent: [], noEmail: [], failed: [] };
+      g[kind].push(w);
+    }));
+    const person = w => esc_(w.name) + (String(w.phone).trim() ? ' · <a href="' + esc_(waLink_(w.phone)) + '">WhatsApp ' + esc_(w.phone) + '</a>' : '');
+    let html = '<div style="font-family:sans-serif;font-size:15px;color:#1d1d1d">';
+    let text = '';
+    Object.keys(groups).forEach(id => {
+      const g = groups[id];
+      html += '<p style="font-size:17px;margin:14px 0 4px">✎ <b>' + esc_(jamName(g.jam)) + '</b></p>';
+      text += jamName(g.jam) + '\n';
+      if (g.sent.length) {
+        html += '<p style="margin:0">sent ' + g.sent.length + ' reminder' + (g.sent.length > 1 ? 's' : '') + ': ' + g.sent.map(w => esc_(w.name)).join(', ') + '</p>';
+        text += 'sent ' + g.sent.length + ': ' + g.sent.map(w => w.name).join(', ') + '\n';
+      }
+      if (g.noEmail.length) {
+        html += '<p style="margin:6px 0 0"><b>no email for these, message them yourself:</b><br>' + g.noEmail.map(person).join('<br>') + '</p>';
+        text += 'no email, message them yourself: ' + g.noEmail.map(w => w.name + (String(w.phone).trim() ? ' (' + waLink_(w.phone) + ')' : '')).join(', ') + '\n';
+      }
+      if (g.failed.length) {
+        html += '<p style="margin:6px 0 0;color:#b00020"><b>couldn\'t send to:</b> ' + g.failed.map(w => esc_(w.name) + ' (' + esc_(w.error) + ')').join(', ') + '</p>';
+        text += "couldn't send to: " + g.failed.map(w => w.name + ' (' + w.error + ')').join(', ') + '\n';
+      }
+      text += '\n';
+    });
+    html += '<p><a href="' + ss.getUrl() + '">open the sheet</a></p></div>';
+    MailApp.sendEmail({ to: to, subject: '✎ reminders sent: ' + Object.keys(groups).map(id => groups[id].jam.event.shortTitle).join(', '), body: text, htmlBody: html, name: 'laidoodle' });
+  } catch (err) {
+    console.error('reminder summary failed: ' + err);
+  }
+}
+
+// Run this from the Apps Script editor: emails YOU a sample reminder for the next jam (nothing is marked
+// in the sheet), and lists who would get a real reminder today.
+function testReminder() {
+  const ss = SpreadsheetApp.getActive();
+  const tz = ss.getSpreadsheetTimeZone();
+  const today = Utilities.formatDate(new Date(), tz, 'yyyy-MM-dd');
+  const counts = signupCounts_(ss);
+  const next = readRows_(ss.getSheetByName('Events'))
+    .filter(r => r.id && !isHiddenRow_(r) && asDate_(r.date, tz) >= today)
+    .sort((a, b) => asDate_(a.date, tz).localeCompare(asDate_(b.date, tz)))[0];
+  if (!next) throw new Error('no upcoming jam in the Events tab to make a sample from');
+  const event = toEvent_(next, counts[next.id] || 0, tz);
+  const to = String(settingsMap_(ss).notify_email || '').trim().split(',')[0].trim() || Session.getEffectiveUser().getEmail();
+  console.log('reminder_days: ' + (reminderDays_(ss).join(', ') || 'off'));
+  MailApp.sendEmail(reminderMail_(ss, event, { name: 'test', email: to, paid: '' }, daysBetween_(today, event.date)));
+  console.log('sample reminder for ' + event.shortTitle + ' sent to ' + to + ' ✓ (check Inbox, Spam and All Mail)');
+  const r = runReminders_(true);
+  console.log('today the timer would remind: ' + (r.sent.map(w => w.name + ' (' + w.jam.event.shortTitle + ')').join(', ') || 'nobody') +
+    (r.noEmail.length ? ' · no email: ' + r.noEmail.map(w => w.name).join(', ') : ''));
+  const timer = ScriptApp.getProjectTriggers().some(t => t.getHandlerFunction() === 'sendReminders');
+  console.log(timer ? 'daily timer is on ✓' : 'daily timer is OFF: run setup to start it');
+}
+
+// Settings → reminder_days "3,1" → [3, 1]. "off" / empty → [].
+function reminderDays_(ss) {
+  const v = String(settingsMap_(ss).reminder_days === undefined ? '3,1' : settingsMap_(ss).reminder_days).trim();
+  if (/^(off|no|n|none)?$/i.test(v)) return [];
+  return v.split(/[^0-9]+/).filter(Boolean).map(Number).filter((d, i, a) => a.indexOf(d) === i);
+}
+
+function reminderColumns_(ss) {
+  return reminderDays_(ss).map(d => 'reminded_' + d + 'd');
+}
+
+// One daily timer for sendReminders (re-running setup replaces it rather than adding another).
+function installReminders_(ss) {
+  ScriptApp.getProjectTriggers().filter(t => t.getHandlerFunction() === 'sendReminders').forEach(t => ScriptApp.deleteTrigger(t));
+  ScriptApp.newTrigger('sendReminders').timeBased().everyDays(1).atHour(10).inTimezone(ss.getSpreadsheetTimeZone()).create();
+}
+
+// "2026-11-11", "2026-11-14" → 3
+function daysBetween_(from, to) {
+  if (!/^\d{4}-\d\d-\d\d$/.test(String(to))) return NaN;
+  return Math.round((Date.parse(to + 'T00:00:00Z') - Date.parse(from + 'T00:00:00Z')) / 86400000);
 }
 
 // WhatsApp chat link. Local Malaysian numbers ("011 3921 4061") get the 60 country code.
