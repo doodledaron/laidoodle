@@ -88,8 +88,10 @@ function setup() {
   installReminders_(ss);
 
   receiptFolder_(ss); // fails here (not at sign-up time) if the folder can't be reached
-  SpreadsheetApp.getUi().alert('laidoodle is set up ✎ Reminder emails go out every day around 10am.\n' +
-    'First time? Deploy → New deployment → Web app. Edited the code? Deploy → Manage deployments → New version.');
+  const done = 'laidoodle is set up ✎ Reminder emails go out every day around 10am.\n' +
+    'First time? Deploy → New deployment → Web app. Edited the code? Deploy → Manage deployments → New version.';
+  console.log(done);
+  try { SpreadsheetApp.getUi().alert(done); } catch (err) { /* no pop-up when the sheet isn't open in a tab; the log above says it instead */ }
 }
 
 function ensureSheet_(ss, name, headers) {
