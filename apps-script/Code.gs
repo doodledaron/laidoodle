@@ -26,7 +26,7 @@ const EVENT_HEADERS = [
 const SIGNUP_HEADERS = [
   'timestamp', 'event_id', 'event', 'name', 'instagram', 'phone', 'doodly',
   'paid', 'receipt', 'notes', 'extra_answers',
-  'agree_safe', 'agree_fee', 'agree_photos', CANCELLED_COL, 'email',
+  'agree_safe', 'agree_fee', 'agree_photos', CANCELLED_COL, 'email', 'agree_marketing',
 ];
 
 const SETTINGS_ROWS = [
@@ -246,6 +246,7 @@ function doPost(e) {
       agree_safe: 'yes',
       agree_fee: event.fee > 0 ? 'yes' : '',
       agree_photos: 'yes',
+      agree_marketing: body.agree_marketing ? 'yes' : 'no', // the form requires it; older cached pages may not send it
       is_cancelled: 'N',
     };
     appendByHeader_(ss.getSheetByName('Signups'), signup);
@@ -276,6 +277,7 @@ function notifyHost_(ss, event, s) {
       ['email', s.email, 'mailto:' + s.email],
       ['how doodly', s.doodly],
       ['paid', s.paid],
+      ['marketing ok', s.agree_marketing],
       ['receipt', s.receipt ? 'open receipt' : '', s.receipt],
       ['anything to know', s.notes],
       ['extra answers', s.extra_answers],
@@ -322,7 +324,7 @@ function jamEmailParts_(ss, event, s) {
   const wa = /^(off|no|none)$/i.test(String(st.host_whatsapp || '').trim()) ? '' : String(st.host_whatsapp || '').trim();
   const host = String(st.notify_email || '').trim();
   const when = event.dayLabel + ', ' + longDate_(event.date) + ' · ' + event.timeRange;
-  let cost = event.fee > 0 ? 'RM ' + event.fee + (event.feeIncludes ? ' · includes ' + event.feeIncludes : ' commitment fee') + (s.paid === 'yes' ? ' (paid ✓)' : '')
+  let cost = event.fee > 0 ? 'RM ' + event.fee + (event.feeIncludes ? ' · includes ' + event.feeIncludes : ' commitment fee') + ' · non-refundable' + (s.paid === 'yes' ? ' (paid ✓)' : '')
     : 'free · just order something at the café ☕';
   if (event.costRemark) cost += '\n+ ' + event.costRemark;
 

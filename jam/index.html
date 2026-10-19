@@ -17,7 +17,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;700&family=Patrick+Hand&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="../styles.css?v=202610041510">
+<link rel="stylesheet" href="../styles.css?v=202610191409">
 <script src="../data.js?v=202610041510"></script>
 </head>
 <body>
@@ -72,7 +72,7 @@
       <div class="info">
         <div class="info__row"><span class="info__label">when</span><span class="info__value">${esc(e.dayLabel)}, ${p.monTitle} ${p.dayNum} · ${esc(e.timeRange)}</span></div>
         <div class="info__row"><span class="info__label">where</span><span class="info__value">${esc(e.venue)}${map}</span></div>
-        <div class="info__row"><span class="info__label">cost</span><span class="info__value">${cost}${e.costRemark ? `<span class="cost-remark">＋ ${esc(e.costRemark)}</span>` : ''}</span></div>
+        <div class="info__row"><span class="info__label">cost</span><span class="info__value">${cost}${e.fee > 0 ? '<span class="cost-note">non-refundable commitment fee · so everyone actually shows up 🙏</span>' : ''}${e.costRemark ? `<span class="cost-remark">＋ ${esc(e.costRemark)}</span>` : ''}</span></div>
         <div class="info__row"><span class="info__label">spots</span><span class="spots"><span style="width:${pct}%"></span></span><span style="font-size:14px">${e.capacity ? `${taken}/${e.capacity}` : taken}</span></div>
       </div>
 

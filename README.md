@@ -52,7 +52,7 @@ Changes show up on the site the next time someone loads the page. No redeploys.
 | `venue_short` | home list (keep it short) | `café TBD` |
 | `venue` | event page | `Kopi Kopi, Jalan 1` |
 | `map_url` | Google Maps link (optional) | |
-| `fee` | RM amount. `0` = free: the site says *"just order something at the café"* and the payment step is skipped | `10` |
+| `fee` | RM amount. `0` = free: the site says *"just order something at the café"* and the payment step is skipped. Paid jams always say it's a **non-refundable commitment fee** (jam page, payment step, tick box, emails). | `10` |
 | `fee_includes` | paid jams only: what the fee covers, shown as "RM 10 · includes …" | `1 drink + snacks` |
 | `cost_remark` | optional free text shown under the cost (event page + payment step), for anything extra | `another RM 10 will be collected at the café for food` |
 | `capacity` | max people. Spots left are counted automatically. | `8` |
