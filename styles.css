@@ -242,6 +242,15 @@ button { font: inherit; color: inherit; }
 .rules__note ul { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 9px; }
 .rules__note li { position: relative; padding-left: 22px; font-size: 16px; line-height: 1.35; }
 .rules__note li::before { content: "✎"; position: absolute; left: 0; top: 0; color: var(--orange); }
+/* the most important rule: pinned first, marker-highlighted */
+.rules__note li.is-key { font-size: 17px; padding-bottom: 9px; border-bottom: 1.5px dashed var(--ink); }
+.rules__note li.is-key::before { content: "📌"; font-size: 14px; top: 2px; }
+.rules__note mark {
+  background: linear-gradient(transparent 45%, rgba(239, 106, 60, .45) 45%, rgba(239, 106, 60, .45) 90%, transparent 90%);
+  color: inherit;
+  padding: 0 2px;
+}
+.rules__emoji { font-size: 20px; vertical-align: -2px; }
 .faq { padding: 26px 18px 28px; }
 .faq .h-section { margin-bottom: 6px; }
 .faq details { border-bottom: 1.5px solid var(--ink); padding: 10px 0; }
