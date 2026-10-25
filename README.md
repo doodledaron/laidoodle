@@ -61,6 +61,7 @@ Changes show up on the site the next time someone loads the page. No redeploys.
 | `extra_questions` | extra questions just for this jam, one per line | `dietary needs?` |
 | `doodlers` | only for old jams from before sign-ups were in the sheet; otherwise leave it empty and it counts sign-ups | `9` |
 | `thumbnail` | the cover picture on the home page's upcoming list and past jams: one Drive image link (a folder link uses its first image). Optional: without it, upcoming jams show no picture and past jams use the first of `photos`. | |
+| `map_area` | where the café is, for the home page's **where we've explored** map. Pick an area from the dropdown (e.g. `Bangsar`, `PJ`, `Shah Alam`), or type `lat, lng` for a spot that isn't listed. Approximate is fine: it's a doodle map. Empty = no pin. Past jams get an orange pin (joined by a dashed "journey" line); upcoming jams get a dashed "next stop" pin. | `Bangsar` |
 
 - **Photo folders:** just paste the folder link. The script switches each photo in it to *anyone with the link* so visitors can see it (your receipts folder is never touched). New photos you drop into a folder show up on the site within ~10 minutes.
 - **Add a jam:** add a row.
@@ -132,7 +133,8 @@ The live site keeps using the old version until you run **Deploy → Manage depl
 
 | file | what |
 | --- | --- |
-| `index.html` → **`/laidoodle/`** | home: title, keyword tapes, upcoming + past jams, house rules, FAQ |
+| `index.html` → **`/laidoodle/`** | home: title, keyword tapes, upcoming + past jams, where we've explored map, house rules, FAQ |
+| `map.js` | the hand-drawn Klang Valley map (no map service, nothing to sign up for) |
 | `jam/index.html` → **`/laidoodle/jam/?id=…`** | jam details |
 | `join/index.html` → **`/laidoodle/join/?id=…`** | sign-up form (3 steps for free jams, 4 for paid) |
 | `404.html` | friendly "page not found" |

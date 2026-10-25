@@ -18,8 +18,9 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;700&family=Patrick+Hand&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css?v=202610250824">
-<script src="data.js?v=202610041510"></script>
+<link rel="stylesheet" href="styles.css?v=202610250842">
+<script src="data.js?v=202610250835"></script>
+<script src="map.js?v=202610250842"></script>
 </head>
 <body>
 <main class="screen">
@@ -32,6 +33,7 @@
         <nav>
           <a href="#upcoming">upcoming</a>
           <a href="#past">past jams</a>
+          <a href="#explored">where we've explored</a>
           <a href="#rules">house rules</a>
           <a href="#faq">questions?</a>
         </nav>
@@ -62,6 +64,12 @@
   <section id="past">
     <h2 class="h-section" style="margin:0;padding:22px 18px 6px">past jams</h2>
     <div class="past" id="past-list"></div>
+  </section>
+
+  <section class="explored" id="explored" hidden>
+    <h2 class="h-section" style="margin:0">where we've explored 🗺</h2>
+    <p class="explored__sub">every café we've doodled at around the Klang Valley (so far). tap a pin ✎</p>
+    <div id="kv"></div>
   </section>
 
   <section class="rules" id="rules">
@@ -116,7 +124,7 @@
   const pastList = document.getElementById('past-list');
   list.innerHTML = LD.loader('loading jams');
 
-  LD.load().then(({ upcoming, past }) => {
+  LD.load().then(({ events, upcoming, past }) => {
     list.innerHTML = upcoming.length ? upcoming.map(e => {
       const p = LD.parts(e);
       return `
@@ -146,6 +154,9 @@
         </a>`;
     }).join('');
     document.getElementById('past').hidden = !past.length;
+
+    LD.map(document.getElementById('kv'), events);
+    document.getElementById('explored').hidden = false;
   }).catch(() => {
     list.innerHTML = `<div class="event-row__meta" style="padding:6px 2px">${LD.loadError()}</div>`;
     document.getElementById('past').hidden = true;

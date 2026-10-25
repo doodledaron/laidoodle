@@ -20,7 +20,7 @@ const CANCELLED_COL = 'isCancelled? (Y/N)';
 const EVENT_HEADERS = [
   'id', HIDDEN_COL, 'short_title', 'title', 'date', 'start_time', 'end_time',
   'venue_short', 'venue', 'map_url', 'fee', 'fee_includes', 'capacity',
-  'photos', 'cafe_photos', 'extra_questions', 'doodlers', 'thumbnail', 'cost_remark',
+  'photos', 'cafe_photos', 'extra_questions', 'doodlers', 'thumbnail', 'cost_remark', 'map_area',
 ];
 
 const SIGNUP_HEADERS = [
@@ -37,6 +37,21 @@ const SETTINGS_ROWS = [
   ['notify_email', ''], // filled with your own email by setup(); "off" turns sign-up emails off
   ['host_whatsapp', '011 39214061'], // your WhatsApp, in the confirmation email ("ask me anything"); "off" hides it
   ['reminder_days', '3,1'], // reminder emails this many days before a jam; "off" stops them
+];
+
+// Areas for the "where we've explored" map (Events → map_area dropdown). Approximate on purpose.
+// You can also type "lat, lng" (e.g. 3.1478, 101.7133) for a spot that isn't listed.
+const MAP_AREAS = [
+  ['KL city centre', 3.149, 101.696], ['KLCC', 3.158, 101.712], ['Bukit Bintang', 3.146, 101.711], ['Chow Kit', 3.164, 101.698],
+  ['Brickfields', 3.131, 101.686], ['Bangsar', 3.130, 101.671], ['Mid Valley', 3.118, 101.677], ['Taman Desa', 3.103, 101.684],
+  ['Old Klang Road', 3.098, 101.672], ['Kuchai Lama', 3.090, 101.688], ['Sri Petaling', 3.068, 101.690], ['Bukit Jalil', 3.058, 101.687],
+  ['Cheras', 3.090, 101.745], ['Ampang', 3.150, 101.762], ['Setapak', 3.196, 101.718], ['Wangsa Maju', 3.205, 101.737],
+  ['Kepong', 3.214, 101.636], ['Mont Kiara', 3.170, 101.651], ['Sri Hartamas', 3.162, 101.650], ['TTDI', 3.138, 101.629],
+  ['Bandar Utama', 3.147, 101.616], ['Damansara Utama (SS21)', 3.135, 101.622], ['Petaling Jaya (PJ)', 3.107, 101.607],
+  ['SS2', 3.118, 101.621], ['Section 17', 3.124, 101.633], ['Kelana Jaya', 3.098, 101.597], ['Sunway', 3.068, 101.605],
+  ['Subang Jaya', 3.050, 101.585], ['USJ', 3.040, 101.582], ['Puchong', 3.025, 101.618], ['Seri Kembangan', 3.022, 101.708],
+  ['Shah Alam', 3.073, 101.518], ['Klang', 3.044, 101.446], ['Cyberjaya', 2.922, 101.651], ['Putrajaya', 2.926, 101.696],
+  ['Kajang', 2.993, 101.787],
 ];
 
 // Used when the Settings tab has no receipt_folder row.
@@ -65,6 +80,7 @@ function setup() {
   }
   events.getRange('E:E').setNumberFormat('yyyy-mm-dd');
   yesNoColumn_(events, 'is_hidden');
+  areaColumn_(events);
 
   const signups = ensureSheet_(ss, 'Signups', SIGNUP_HEADERS);
   upgradeHeaders_(signups, SIGNUP_HEADERS, { status: CANCELLED_COL });
@@ -137,6 +153,28 @@ function yesNoColumn_(sheet, key) {
   sheet.getRange(2, col, sheet.getMaxRows() - 1, 1).setDataValidation(rule);
 }
 
+// Events → map_area: a dropdown of MAP_AREAS (typing "lat, lng" is still allowed).
+function areaColumn_(sheet) {
+  const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0].map(key_);
+  const col = headers.indexOf('map_area') + 1;
+  if (!col || sheet.getMaxRows() < 2) return;
+  const rule = SpreadsheetApp.newDataValidation().requireValueInList(MAP_AREAS.map(a => a[0]), true).setAllowInvalid(true)
+    .setHelpText('pick the area for the map, or type "lat, lng"').build();
+  sheet.getRange(2, col, sheet.getMaxRows() - 1, 1).setDataValidation(rule);
+}
+
+// map_area cell → [lat, lng] for the map, or null. Takes an area name, "lat, lng", or a Google Maps link with @lat,lng.
+function mapPoint_(v) {
+  const text = String(v || '').trim();
+  if (!text) return null;
+  const pair = text.match(/^(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)$/) || text.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/);
+  if (pair) return [Number(pair[1]), Number(pair[2])];
+  const flat = s => String(s).toLowerCase().replace(/[^a-z0-9]/g, '');
+  const names = a => [a[0]].concat(a[0].split(/[()]/)).map(flat).filter(Boolean); // "Petaling Jaya (PJ)" also matches "PJ"
+  const hit = MAP_AREAS.find(a => names(a).indexOf(flat(text)) !== -1) || MAP_AREAS.find(a => flat(a[0]).indexOf(flat(text)) === 0);
+  return hit ? [hit[1], hit[2]] : null;
+}
+
 // Settings → receipt_folder (a Drive folder link or ID), else the default above.
 function receiptFolder_(ss) {
   const value = String(settingsMap_(ss).receipt_folder || '').trim();
@@ -189,6 +227,7 @@ function toEvent_(r, taken, tz) {
     thumbnail: photoList_(r.thumbnail)[0] || '', // one image link (or a folder: its first image)
     extraQuestions: lines_(r.extra_questions),
     doodlers: r.doodlers === '' ? taken : Number(r.doodlers),
+    mapPoint: mapPoint_(r.map_area), // [lat, lng] for the "where we've explored" map, or null
   };
 }
 
