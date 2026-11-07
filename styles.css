@@ -411,6 +411,9 @@ button.pill { border: 0; }
 .choice:nth-of-type(odd) { transform: rotate(-.6deg); }
 .choice:nth-of-type(even) { transform: rotate(.5deg); }
 .choice input { position: absolute; opacity: 0; pointer-events: none; }
+.step__q { margin-top: 30px; font: 700 16px var(--body); }
+.choices--pair { flex-direction: row; margin-top: 12px; }
+.choices--pair .choice { flex: 1; justify-content: center; text-align: center; padding: 15px 10px; font-size: 15px; }
 .choice__face { width: 40px; height: 40px; border: 2px solid currentColor; border-radius: 50%; flex: none; display: flex; align-items: center; justify-content: center; }
 .choice__face svg { width: 30px; height: 30px; stroke: currentColor; fill: none; stroke-width: 1.6; stroke-linecap: round; }
 .choice:has(input:checked) { background: var(--cobalt); color: var(--paper); clip-path: var(--torn-card); filter: none; margin-inline: 8px; padding-inline: 8px; }

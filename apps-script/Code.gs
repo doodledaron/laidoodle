@@ -26,7 +26,7 @@ const EVENT_HEADERS = [
 const SIGNUP_HEADERS = [
   'timestamp', 'event_id', 'event', 'name', 'instagram', 'phone', 'doodly',
   'paid', 'receipt', 'notes', 'extra_answers',
-  'agree_safe', 'agree_fee', 'agree_photos', CANCELLED_COL, 'email', 'agree_marketing',
+  'agree_safe', 'agree_fee', 'agree_photos', CANCELLED_COL, 'email', 'agree_marketing', 'joined_before',
 ];
 
 const SETTINGS_ROWS = [
@@ -278,6 +278,7 @@ function doPost(e) {
       phone: body.phone,
       email: body.email,
       doodly: body.doodly,
+      joined_before: body.joined_before || '', // "first time" / "joined before"; older cached pages don't ask
       paid: event.fee > 0 ? (body.paid ? 'yes' : 'no') : 'free',
       receipt: receipt,
       notes: body.notes || '',
@@ -288,7 +289,9 @@ function doPost(e) {
       agree_marketing: body.agree_marketing ? 'yes' : 'no', // the form requires it; older cached pages may not send it
       is_cancelled: 'N',
     };
-    appendByHeader_(ss.getSheetByName('Signups'), signup);
+    const signups = ss.getSheetByName('Signups');
+    upgradeHeaders_(signups, SIGNUP_HEADERS, {}); // adds new columns (like joined_before) without re-running setup
+    appendByHeader_(signups, signup);
     lock.releaseLock(); // the sign-up is saved; the email below doesn't need to hold anyone else up
     notifyHost_(ss, event, signup);
     confirmToDoodler_(ss, event, signup);
@@ -315,6 +318,7 @@ function notifyHost_(ss, event, s) {
       ['phone / whatsapp', s.phone, waLink_(s.phone)],
       ['email', s.email, 'mailto:' + s.email],
       ['how doodly', s.doodly],
+      ['joined before?', s.joined_before],
       ['paid', s.paid],
       ['marketing ok', s.agree_marketing],
       ['receipt', s.receipt ? 'open receipt' : '', s.receipt],
@@ -403,12 +407,12 @@ function confirmToDoodler_(ss, event, s) {
       '<p style="margin:16px 0 0"><b>questions? ask me anything</b> on ' + x.contactHtml('IG') + ' ✎</p>' +
       '<p style="margin:10px 0 0"><b>can\'t make it?</b> please let me know so someone else can take ur spot: ' + x.contactHtml('DM me') + '.</p>' +
       '<p style="margin:10px 0 0;color:#666">if the date or venue changes, i\'ll let u know on WhatsApp or IG.</p>' +
-      '<p style="margin:16px 0 0">see u soon,<br>laidoodle 来涂鸦</p></div>';
+      '<p style="margin:16px 0 0">see u soon,<br>laidoodle</p></div>';
     const text = 'hi ' + s.name + ", u're in! ✎\n\nsee u at " + event.shortTitle + '.\n\n' +
       x.tableText +
       '\n\nquestions? ask me anything on ' + x.contactText + ' ✎' +
       "\ncan't make it? please let me know so someone else can take ur spot: " + x.contactText + '.' +
-      "\nif the date or venue changes, i'll let u know on WhatsApp or IG.\n\nsee u soon,\nlaidoodle 来涂鸦";
+      "\nif the date or venue changes, i'll let u know on WhatsApp or IG.\n\nsee u soon,\nlaidoodle";
     const mail = {
       to: s.email,
       subject: "✎ u're in: " + event.shortTitle + ' · ' + event.dayLabel + ', ' + longDate_(event.date),
@@ -489,11 +493,11 @@ function reminderMail_(ss, event, s, days) {
     '<p style="margin:16px 0 0;padding:10px 12px;background:#fff3a8;border:2px dashed #e0a800;border-radius:10px">' +
     '<b>can\'t make it?</b> please tell me asap on ' + x.contactHtml('DM me') + ' so someone else can take ur spot 🙏</p>' +
     '<p style="margin:12px 0 0"><b>questions? ask me anything</b> ✎</p>' +
-    '<p style="margin:16px 0 0">see u soon,<br>laidoodle 来涂鸦</p></div>';
+    '<p style="margin:16px 0 0">see u soon,<br>laidoodle</p></div>';
   const text = 'hi ' + s.name + ' ✎\n\njust a reminder: ' + event.shortTitle + ' is ' + soon + '!\n\n' +
     x.tableText +
     "\n\n‼ can't make it? please tell me asap on " + x.contactText + ' so someone else can take ur spot 🙏' +
-    '\nquestions? ask me anything ✎\n\nsee u soon,\nlaidoodle 来涂鸦';
+    '\nquestions? ask me anything ✎\n\nsee u soon,\nlaidoodle';
   const mail = {
     to: s.email,
     subject: (days === 1 ? '✎ see u tomorrow: ' : days === 0 ? '✎ see u today: ' : '✎ ' + days + ' days to go: ') +

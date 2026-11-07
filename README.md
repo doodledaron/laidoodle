@@ -78,7 +78,7 @@ A row is added for each person who signs up. For paid jams a receipt upload is r
 
 ### Sign-up emails
 
-Every new sign-up emails you the details: name, IG (tap to open), WhatsApp (tap to chat), how doodly, paid, a receipt link, their answers, and spots left. It goes to `notify_email` in Settings. Gmail lets a script send about 100 emails a day, far more than a jam needs. If an email ever fails, the sign-up is still saved.
+Every new sign-up emails you the details: name, IG (tap to open), WhatsApp (tap to chat), how doodly, whether they joined before, paid, a receipt link, their answers, and spots left. It goes to `notify_email` in Settings. Gmail lets a script send about 100 emails a day, far more than a jam needs. If an email ever fails, the sign-up is still saved.
 
 ### Confirmation email to the doodler
 

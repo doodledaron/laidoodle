@@ -20,7 +20,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,500;9..40,700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="../styles.css?v=202611071900">
+<link rel="stylesheet" href="../styles.css?v=202611072000">
 <script src="../data.js?v=202610250835"></script>
 </head>
 <body>
@@ -84,6 +84,12 @@
             <span class="choice__face"><svg viewBox="0 0 30 30"><path d="M7 9q8-7 16 0M8 10q3-2 6 0M16 10q3-2 6 0"/><circle cx="11" cy="13.5" r="2"/><circle cx="19" cy="13.5" r="2"/><path d="M10 18q5 6 10 0z"/><circle cx="7" cy="17.5" r="1.4"/><circle cx="23" cy="17.5" r="1.4"/><path d="M24 4l1.5 2.5M27 7l-2 1"/></svg></span>i draw every day</label>
         </fieldset>
         <small class="err" id="doodly-err">pick whichever feels closest</small>
+        <div class="step__q" id="joined-q">have u joined laidoodle before?</div>
+        <fieldset class="choices choices--pair" aria-labelledby="joined-q">
+          <label class="choice"><input type="radio" name="joined_before" value="first time" required>first time ✎</label>
+          <label class="choice"><input type="radio" name="joined_before" value="joined before">yes, been before!</label>
+        </fieldset>
+        <small class="err" id="joined-err">just pick one :)</small>
       </div>
       <div class="step__foot"><button type="button" class="pill pill--ink" data-next>next →</button></div>
     </section>
@@ -253,8 +259,10 @@
     }
     if (name === 'doodly') {
       const ok = !!form.doodly.value;
+      const joined = !!form.joined_before.value;
       document.getElementById('doodly-err').classList.toggle('is-shown', !ok);
-      return ok;
+      document.getElementById('joined-err').classList.toggle('is-shown', !joined);
+      return ok && joined;
     }
     if (name === 'fee') {
       const ok = form.paid.checked;
@@ -281,6 +289,7 @@
   });
   form.addEventListener('change', ev => {
     if (ev.target.name === 'doodly') document.getElementById('doodly-err').classList.remove('is-shown');
+    if (ev.target.name === 'joined_before') document.getElementById('joined-err').classList.remove('is-shown');
     if (ev.target.name === 'paid') document.getElementById('paid-err').classList.remove('is-shown');
   });
 
@@ -366,6 +375,7 @@
         phone: form.phone.value.trim(),
         email: document.getElementById('email').value.trim(),
         doodly: form.doodly.value,
+        joined_before: form.joined_before.value,
         paid: paid && form.paid.checked,
         notes: form.notes.value.trim(),
         extra: [...form.querySelectorAll('[data-question]')].map(t => ({ q: t.dataset.question, a: t.value.trim() })),
