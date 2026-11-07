@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>laidoodle · 来涂鸦</title>
 <meta name="description" content="laidoodle — 来涂鸦, just come and doodle. Small-circle doodle jams in cafés.">
-<meta name="theme-color" content="#f5eedc">
+<meta name="theme-color" content="#F7EFDF">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="laidoodle">
 <meta property="og:title" content="laidoodle · 来涂鸦">
@@ -13,12 +13,12 @@
 <meta property="og:image" content="https://doodledaron.github.io/laidoodle/assets/doodles.png">
 <meta property="og:url" content="https://doodledaron.github.io/laidoodle/">
 <meta name="twitter:card" content="summary_large_image">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%E2%9C%8E%3C/text%3E%3C/svg%3E">
+<link rel="icon" href="assets/logo/laidoodle-mark.svg" type="image/svg+xml">
 <link rel="canonical" href="https://doodledaron.github.io/laidoodle/">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;700&family=Patrick+Hand&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css?v=202610250842">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,500;9..40,700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css?v=202611071930">
 <script src="data.js?v=202610250835"></script>
 <script src="map.js?v=202610250842"></script>
 </head>
@@ -27,7 +27,7 @@
 
   <header class="hero">
     <div class="topbar">
-      <span>laidoodle</span>
+      <span><img class="topbar__mark" src="assets/logo/laidoodle-mark.svg" alt="laidoodle"></span>
       <details class="menu">
         <summary aria-label="menu">≡</summary>
         <nav>
@@ -40,10 +40,16 @@
       </details>
     </div>
     <div class="title-card">
-      <div class="title-card__paper">
-        <h1>laidoodle</h1>
-        <div class="title-card__zh">来 doodle</div>
-        <p class="title-card__note">laidoodle is translated from chinese word 来涂鸦 — which basically means just come and doodle.</p>
+      <!-- two torn-paper faces that flip by themselves -->
+      <div class="title-card__flip">
+        <div class="title-card__paper title-card__face">
+          <h1><img src="assets/logo/laidoodle-wordmark.svg" alt="laidoodle"></h1>
+          <p class="title-card__note">A third place for everyone: not home, not work, but the table in between, where you can just show up and be yourself.</p>
+        </div>
+        <div class="title-card__paper title-card__face title-card__face--back">
+          <h2 class="title-card__h">Doodle is our language</h2>
+          <p class="title-card__note">Doodling is how we get there. Nobody's grading the drawing; it gives your hands something to do while you get to know people, swap ideas and learn something new.</p>
+        </div>
       </div>
     </div>
   </header>
@@ -140,7 +146,7 @@
           </a>
           ${e.spotsLeft > 0
             ? `<a class="pill pill--blue" href="${LD.url.join(e.id)}">join</a>`
-            : `<span class="pill" style="padding:4px 10px;font-size:14px;border-radius:20px;color:#888">full</span>`}
+            : `<span class="pill pill--full">full</span>`}
         </div>`;
     }).join('') : '<div class="event-row__meta" style="padding:6px 2px">no jams planned yet, check back soon ✎</div>';
 
