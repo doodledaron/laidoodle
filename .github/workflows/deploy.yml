@@ -1,6 +1,6 @@
 # Publishes the site to GitHub Pages:
-#   main → https://doodledaron.github.io/laidoodle/      (prod)
-#   uat  → https://doodledaron.github.io/laidoodle/uat/  (testing)
+#   main → https://laidoodle.my/      (prod; the old doodledaron.github.io/laidoodle/ address redirects here)
+#   uat  → https://laidoodle.my/uat/  (testing)
 # A push to either branch rebuilds both, so each always shows its branch's latest commit.
 # GitHub only lets main publish to Pages, so a push to uat just asks main to rebuild (job "from-uat").
 # One-time: repo Settings → Pages → Source: "GitHub Actions".

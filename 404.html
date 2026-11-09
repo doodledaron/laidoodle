@@ -6,19 +6,20 @@
 <title>laidoodle · page not found</title>
 <meta name="robots" content="noindex">
 <meta name="theme-color" content="#F7EFDF">
-<link rel="icon" href="/laidoodle/assets/logo/laidoodle-mark.svg" type="image/svg+xml">
+<link rel="icon" href="assets/logo/laidoodle-mark.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,500;9..40,700&display=swap" rel="stylesheet">
-<!-- 404s can happen at any depth, so this page uses full paths -->
-<link rel="stylesheet" href="/laidoodle/styles.css?v=202611072000">
+<!-- 404s can happen at any depth: point every link at the site root, on laidoodle.my (/) or the old github.io address (/laidoodle/) -->
+<script>document.write('<base href="' + (location.pathname.indexOf('/laidoodle/') === 0 ? '/laidoodle/' : '/') + '">');</script>
+<link rel="stylesheet" href="styles.css?v=202611072000">
 </head>
 <body>
 <main class="screen form-screen">
   <div class="done">
     <h1 class="h-step">hmm, this page wandered off ✎</h1>
     <p>the link might be old or mistyped. the jams are all on the home page.</p>
-    <a class="pill pill--ink" href="/laidoodle/" style="padding:10px 22px;font-size:18px;margin-top:10px">back to laidoodle</a>
+    <a class="pill pill--ink" href="./" style="padding:10px 22px;font-size:18px;margin-top:10px">back to laidoodle</a>
   </div>
 </main>
 </body>

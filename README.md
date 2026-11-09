@@ -2,7 +2,7 @@
 
 just come and doodle ✎ A mobile-first site for small-circle doodle jams.
 
-Live at **https://doodledaron.github.io/laidoodle/**
+Live at **https://laidoodle.my/** (the old https://doodledaron.github.io/laidoodle/ address redirects there)
 
 ## How it works
 
@@ -117,8 +117,8 @@ The live site keeps using the old version until you run **Deploy → Manage depl
 
 | branch | site | uses |
 | --- | --- | --- |
-| `main` | https://doodledaron.github.io/laidoodle/ | your real sheet (`apiUrl` in `data.js`) |
-| `uat` | https://doodledaron.github.io/laidoodle/uat/ | a test copy of the sheet (`uatApiUrl`), or sample data if that's empty |
+| `main` | https://laidoodle.my/ | your real sheet (`apiUrl` in `data.js`) |
+| `uat` | https://laidoodle.my/uat/ | a test copy of the sheet (`uatApiUrl`), or sample data if that's empty |
 
 - Try changes on `uat` first. When they look good, merge `uat` into `main`.
 - Both sites come from the same code. The UAT site spots that it's under `/uat/`, uses `uatApiUrl`, shows a yellow **UAT** ribbon, and hides itself from search engines.
@@ -133,10 +133,10 @@ The live site keeps using the old version until you run **Deploy → Manage depl
 
 | file | what |
 | --- | --- |
-| `index.html` → **`/laidoodle/`** | home: title, keyword tapes, upcoming + past jams, where we've explored map, house rules, FAQ |
+| `index.html` → **`/`** | home: title, keyword tapes, upcoming + past jams, where we've explored map, house rules, FAQ |
 | `map.js` | the hand-drawn Klang Valley map (no map service, nothing to sign up for) |
-| `jam/index.html` → **`/laidoodle/jam/?id=…`** | jam details |
-| `join/index.html` → **`/laidoodle/join/?id=…`** | sign-up form (3 steps for free jams, 4 for paid) |
+| `jam/index.html` → **`/jam/?id=…`** | jam details |
+| `join/index.html` → **`/join/?id=…`** | sign-up form (3 steps for free jams, 4 for paid) |
 | `404.html` | friendly "page not found" |
 | `event.html`, `signup.html` | old addresses: forward to `jam/` and `join/` so old shared links still work |
 | `data.js` | `apiUrl` + sample data + small shared helpers |
