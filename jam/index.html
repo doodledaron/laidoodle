@@ -69,7 +69,7 @@
       <div class="detail-head">
         <div class="detail-head__kicker">${esc(e.shortTitle)}</div>
         <h1>${esc(e.title)}</h1>
-        <div><span class="tape">materials provided: papers only</span></div>
+        <div><span class="tape">materials provided: papers, crayons &amp; marker pens</span></div>
       </div>
 
       <div class="info">
@@ -81,7 +81,7 @@
 
       ${ended ? '' : `<section class="block">
         <h2 class="h-sub" style="margin:0">how it works?</h2>
-        <p>I will prepare big papers only (some pens) and it will be 1 long table or multiple. no one is forced to share stories, feel free to move around other tables if u feel uncomfy. make yourself home, no pressure to TALK &amp; SOCIALIZE.</p>
+        <p><mark>I'll provide papers, crayons and marker pens.</mark> it'll be 1 long table or a few. <mark>feel free to move your table around</mark> and make yourself home. no one is forced to share stories, no pressure to TALK &amp; SOCIALIZE.</p>
       </section>`}
 
       ${showCafeSection ? `
@@ -94,8 +94,9 @@
       </div>` : ''}
 
       ${ended ? '' : `<section class="block">
-        <h2 class="h-sub" style="margin:0">bring your own</h2>
-        <div class="bring"><span>○ pens / markers</span><span>○ pencils</span><span>○ crayons</span></div>
+        <h2 class="h-sub" style="margin:0">bring your own (optional)</h2>
+        <p class="bring-note">feel free to bring your own too, coz sharing is caring ♡</p>
+        <div class="bring"><span>○ markers / pens</span><span>○ pencils</span><span>○ anything u like</span></div>
         <div class="no-mess">✕ no watercolors or anything messy please</div>
       </section>`}
 

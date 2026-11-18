@@ -238,7 +238,7 @@ button.pill { border: 0; }
 .rules__note li::before { content: "✎"; position: absolute; left: 0; top: 0; color: var(--pink); }
 .rules__note li.is-key { font-size: 16px; padding-bottom: 12px; border-bottom: 2px dotted var(--cobalt-faint); }
 .rules__note li.is-key::before { content: "📌"; font-size: 13px; top: 2px; }
-.rules__note mark { /* pink marker scribble */
+.rules__note mark, .block mark { /* pink marker scribble */
   background: linear-gradient(-1.5deg, transparent 18%, rgba(228, 86, 106, .38) 20%, rgba(228, 86, 106, .38) 86%, transparent 88%);
   color: inherit;
   padding: 0 3px;
@@ -336,6 +336,7 @@ button.pill { border: 0; }
 .cafe-photos__item { flex: none; width: 200px; scroll-snap-align: start; }
 .cafe-photos .past__photo { height: 150px; }
 .bring { font-size: 15px; line-height: 1.7; margin-top: 4px; }
+.bring-note { margin: 6px 0 0; font-size: 15px; }
 .bring span { white-space: nowrap; margin-right: 14px; }
 .no-mess { margin-top: 6px; font-size: 14px; font-weight: 700; color: var(--pink); }
 
