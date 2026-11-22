@@ -286,7 +286,7 @@ function doPost(e) {
       event_id: event.id,
       event: event.shortTitle,
       name: body.name,
-      instagram: body.instagram,
+      instagram: String(body.instagram).trim().replace(/^@+/, '').toLowerCase(), // one spelling per person: no @, lower case
       phone: body.phone,
       email: body.email,
       doodly: body.doodly,
@@ -610,10 +610,12 @@ function daysBetween_(from, to) {
   return Math.round((Date.parse(to + 'T00:00:00Z') - Date.parse(from + 'T00:00:00Z')) / 86400000);
 }
 
-// WhatsApp chat link. Local Malaysian numbers ("011 3921 4061") get the 60 country code.
+// WhatsApp chat link. Local Malaysian numbers ("011 3921 4061") get the 60 country code,
+// and so do mobile numbers whose leading 0 the sheet dropped ("125318358").
 function waLink_(phone) {
   let d = String(phone).replace(/\D/g, '');
   if (/^0\d{8,10}$/.test(d)) d = '60' + d.slice(1);
+  else if (/^1\d{7,9}$/.test(d)) d = '60' + d;
   return 'https://wa.me/' + d;
 }
 
