@@ -109,6 +109,37 @@ Keep making a Google Form per jam as usual. Paste the link to its **responses sh
 - **Run it now:** in Apps Script, run **`syncFeedback`**. The first time, Google asks for permission again, because the script now reads your feedback sheets too.
 - The daily timer is started by `setup`.
 
+### Posts tab: Instagram and Threads stats
+
+`apps-script/Stats.gs` copies your posts from **@laidoodle_** and **@doodledaron** on Instagram and Threads into the **Posts** tab, one row per post (Stories are skipped: their stats only last 24 hours).
+
+- **Sync:** press **Sync data** on the dashboard (it opens the web app with `?action=sync`), or use the sheet's **laidoodle → Sync social stats** menu. A sync can run at most once every 2 minutes.
+- Each sync refreshes the stats columns (`reach`, `views`, `likes`, `comments`, `saves`, `shares`, `reposts`, `follows`, `profile_visits`). It fills `format` and `event_id` only when they're empty (`event_id` = the next jam after the post's date; fix it if it's wrong), and never touches `hook`, `first_slide` or `notes`.
+- Threads has no reach, so `views` is the number to compare there. Threads reposts and quotes are added together in `reposts`.
+- Rows you add by hand (no `post_id`) are left alone.
+
+**One-time setup** (Meta's screens change now and then; ask Claude if a step looks different):
+
+1. Paste `apps-script/Stats.gs` into Apps Script as a second file named `Stats` (＋ → Script).
+2. On [developers.facebook.com](https://developers.facebook.com) create an app with the **Instagram API with Instagram login** use case, and a second app with the **Access the Threads API** use case.
+   - Instagram permissions: `instagram_business_basic`, `instagram_business_manage_insights`.
+   - Threads permissions: `threads_basic`, `threads_manage_insights`.
+3. In each app, **App roles → Roles → Add people**: add @laidoodle_ and @doodledaron as **Instagram testers** / **Threads testers**, then accept the invites in each account (Instagram and Threads: Settings → Website permissions / Apps and websites → Tester invites).
+4. Generate a token for each account in the app dashboard (Instagram: *API setup with Instagram login → Generate access tokens*; Threads: *User token generator*).
+5. In Apps Script, **⚙️ Project Settings → Script Properties**, add one property per token. **Never put tokens in the sheet, the chat or this repo (it's public).**
+
+   | property | account |
+   | --- | --- |
+   | `IG_LAIDOODLE_TOKEN` | @laidoodle_ on Instagram |
+   | `IG_DOODLEDARON_TOKEN` | @doodledaron on Instagram |
+   | `THREADS_LAIDOODLE_TOKEN` | @laidoodle_ on Threads |
+   | `THREADS_DOODLEDARON_TOKEN` | @doodledaron on Threads |
+
+6. Run **`testStats`**: its log says OK or what's wrong for each account, and writes nothing.
+7. Run **`setup`** (adds the Posts columns and a weekly timer that keeps tokens fresh), then **Deploy → Manage deployments → New version** (the sync link is part of the web app).
+
+Tokens last 60 days; the script refreshes them weekly, so they don't run out. If one does fail, you get one email a day about it.
+
 ### Settings tab
 
 | key | value |
@@ -156,5 +187,6 @@ The live site keeps using the old version until you run **Deploy → Manage depl
 | `data.js` | `apiUrl` + sample data + small shared helpers |
 | `styles.css` | all styling |
 | `apps-script/Code.gs` | the Google Sheet backend |
+| `apps-script/Stats.gs` | Instagram and Threads stats into the Posts tab (second file in the same Apps Script project) |
 
 Preview locally: `python3 -m http.server` in this folder, then open http://localhost:8000.

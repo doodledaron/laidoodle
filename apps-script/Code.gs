@@ -9,6 +9,7 @@
  *
  * Reminder emails: setup() also starts a daily timer (~10am) that runs sendReminders().
  * Feedback: setup() also starts a daily timer (~11am) that runs syncFeedback().
+ * Social stats: Stats.gs (a second file in this project) fills the Posts tab; see the top of that file.
  *
  * First time: run setup() once, then Deploy → New deployment → Web app
  *   (Execute as: Me, Who has access: Anyone) and put the URL into data.js → apiUrl.
@@ -116,6 +117,9 @@ function setup() {
   ensureSheet_(ss, 'Feedback', FEEDBACK_HEADERS);
   installFeedbackSync_(ss);
 
+  setupPosts_(ss);       // Stats.gs: Posts tab columns and dropdowns
+  installStatsTimer_();  // Stats.gs: weekly timer that keeps Instagram/Threads tokens fresh
+
   receiptFolder_(ss); // fails here (not at sign-up time) if the folder can't be reached
   const done = 'laidoodle is set up ✎ Reminder emails go out every day around 10am; feedback is copied in around 11am.\n' +
     'First time? Deploy → New deployment → Web app. Edited the code? Deploy → Manage deployments → New version.';
@@ -217,7 +221,8 @@ function receiptName_(eventName, person, original, when, tz) {
 
 // ---------- GET: events for the site (never returns sign-up details) ----------
 
-function doGet() {
+function doGet(e) {
+  if (e && e.parameter && e.parameter.action === 'sync') return syncPage_(); // the dashboard's "Sync data" button (Stats.gs)
   const ss = SpreadsheetApp.getActive();
   const counts = signupCounts_(ss);
   const events = readRows_(ss.getSheetByName('Events'))
