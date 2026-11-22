@@ -5,8 +5,10 @@
  *   Events   – one row per jam. Put Y in "isHidden? (Y/N)" to take one off the site.
  *   Signups  – filled in automatically. Add your own columns freely; put Y in "isCancelled? (Y/N)" to free up a spot.
  *   Settings – host_instagram, bank_text, payment_qr, receipt_folder (where receipts are saved).
+ *   Feedback – filled automatically once a day from each jam's feedback_sheet (Events tab).
  *
  * Reminder emails: setup() also starts a daily timer (~10am) that runs sendReminders().
+ * Feedback: setup() also starts a daily timer (~11am) that runs syncFeedback().
  *
  * First time: run setup() once, then Deploy → New deployment → Web app
  *   (Execute as: Me, Who has access: Anyone) and put the URL into data.js → apiUrl.
@@ -21,12 +23,18 @@ const EVENT_HEADERS = [
   'id', HIDDEN_COL, 'short_title', 'title', 'date', 'start_time', 'end_time',
   'venue_short', 'venue', 'map_url', 'fee', 'fee_includes', 'capacity',
   'photos', 'cafe_photos', 'extra_questions', 'doodlers', 'thumbnail', 'cost_remark', 'map_area',
+  // for your own tracking (the site ignores these):
+  'announced_at',   // when you posted the jam, so the dashboard can measure time to fill
+  'cost_total',     // what the jam cost you in RM (venue, drinks, snacks, materials)
+  'feedback_sheet', // link to this jam's feedback form responses sheet; syncFeedback copies it into Feedback
 ];
 
 const SIGNUP_HEADERS = [
   'timestamp', 'event_id', 'event', 'name', 'instagram', 'phone', 'doodly',
   'paid', 'receipt', 'notes', 'extra_answers',
   'agree_safe', 'agree_fee', 'agree_photos', CANCELLED_COL, 'email', 'agree_marketing', 'joined_before',
+  'source',   // "how did u find laidoodle?" on the form
+  'attended', // you fill in Y/N after the jam
 ];
 
 const SETTINGS_ROWS = [
@@ -85,6 +93,7 @@ function setup() {
   const signups = ensureSheet_(ss, 'Signups', SIGNUP_HEADERS);
   upgradeHeaders_(signups, SIGNUP_HEADERS, { status: CANCELLED_COL });
   yesNoColumn_(signups, 'is_cancelled');
+  yesNoColumn_(signups, 'attended');
   signups.getRange('F:F').setNumberFormat('@'); // keep "+60…" phone numbers as text
 
   const settings = ensureSheet_(ss, 'Settings', ['key', 'value']);
@@ -103,8 +112,11 @@ function setup() {
   upgradeHeaders_(signups, reminderColumns_(ss), {}); // reminded_3d, reminded_1d: when each reminder went out
   installReminders_(ss);
 
+  ensureSheet_(ss, 'Feedback', FEEDBACK_HEADERS);
+  installFeedbackSync_(ss);
+
   receiptFolder_(ss); // fails here (not at sign-up time) if the folder can't be reached
-  const done = 'laidoodle is set up ✎ Reminder emails go out every day around 10am.\n' +
+  const done = 'laidoodle is set up ✎ Reminder emails go out every day around 10am; feedback is copied in around 11am.\n' +
     'First time? Deploy → New deployment → Web app. Edited the code? Deploy → Manage deployments → New version.';
   console.log(done);
   try { SpreadsheetApp.getUi().alert(done); } catch (err) { /* no pop-up when the sheet isn't open in a tab; the log above says it instead */ }
@@ -279,6 +291,7 @@ function doPost(e) {
       email: body.email,
       doodly: body.doodly,
       joined_before: body.joined_before || '', // "first time" / "joined before"; older cached pages don't ask
+      source: String(body.source || '').slice(0, 120), // "how did u find laidoodle?"; older cached pages don't ask
       paid: event.fee > 0 ? (body.paid ? 'yes' : 'no') : 'free',
       receipt: receipt,
       notes: body.notes || '',
@@ -319,6 +332,7 @@ function notifyHost_(ss, event, s) {
       ['email', s.email, 'mailto:' + s.email],
       ['how doodly', s.doodly],
       ['joined before?', s.joined_before],
+      ['found us via', s.source],
       ['paid', s.paid],
       ['marketing ok', s.agree_marketing],
       ['receipt', s.receipt ? 'open receipt' : '', s.receipt],
@@ -616,6 +630,65 @@ function longDate_(iso) {
 
 function esc_(v) {
   return String(v).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+}
+
+// ---------- feedback: copy each jam's form answers into one Feedback tab ----------
+
+// Fixed columns first; every question from your forms gets its own column after these (added as they appear).
+const FEEDBACK_HEADERS = ['event_id', 'event', 'timestamp', 'response_key'];
+
+// Runs every day around 11am (setup() starts the timer); you can also run it by hand.
+// For every jam with a feedback_sheet link in Events, copies answers not copied before into Feedback.
+// Your forms and their response sheets are only read, never changed.
+function syncFeedback() {
+  const ss = SpreadsheetApp.getActive();
+  const tz = ss.getSpreadsheetTimeZone();
+  const out = ensureSheet_(ss, 'Feedback', FEEDBACK_HEADERS);
+  upgradeHeaders_(out, FEEDBACK_HEADERS, {});
+  const done = {};
+  readRows_(out).forEach(r => { if (r.response_key) done[r.response_key] = true; });
+  let added = 0;
+  readRows_(ss.getSheetByName('Events')).forEach(ev => {
+    const url = String(ev.feedback_sheet || '').trim();
+    if (!ev.id || !/^https:\/\/docs\.google\.com\/spreadsheets\//.test(url)) return;
+    try {
+      const src = feedbackSource_(url);
+      const values = src.getDataRange().getValues();
+      if (values.length < 2) return;
+      const questions = values[0].map(h => String(h).trim());
+      upgradeHeaders_(out, questions.filter(q => q && key_(q) !== 'timestamp'), {});
+      values.slice(1).forEach(v => {
+        if (v.every(c => c === '' || c === null)) return;
+        const answer = {};
+        questions.forEach((q, i) => { if (q) answer[key_(q)] = v[i] instanceof Date ? Utilities.formatDate(v[i], tz, 'yyyy-MM-dd HH:mm:ss') : v[i]; });
+        const key = ev.id + '|' + (answer.timestamp || '') + '|' + (answer['your email'] || answer['your name'] || '');
+        if (done[key]) return;
+        answer.event_id = ev.id;
+        answer.event = ev.short_title;
+        answer.response_key = key;
+        appendByHeader_(out, answer);
+        done[key] = true;
+        added++;
+      });
+    } catch (err) {
+      console.error('feedback for ' + ev.id + ' could not be read: ' + err); // shows under Executions in Apps Script
+    }
+  });
+  console.log('syncFeedback: ' + added + ' new answer(s) copied.');
+  return added;
+}
+
+// The tab the link points at (its #gid=…), or the first tab.
+function feedbackSource_(url) {
+  const book = SpreadsheetApp.openByUrl(url);
+  const gid = (url.match(/[#&?]gid=(\d+)/) || [])[1];
+  return (gid && book.getSheets().find(sh => String(sh.getSheetId()) === gid)) || book.getSheets()[0];
+}
+
+// One daily timer for syncFeedback (re-running setup replaces it rather than adding another).
+function installFeedbackSync_(ss) {
+  ScriptApp.getProjectTriggers().filter(t => t.getHandlerFunction() === 'syncFeedback').forEach(t => ScriptApp.deleteTrigger(t));
+  ScriptApp.newTrigger('syncFeedback').timeBased().everyDays(1).atHour(11).inTimezone(ss.getSpreadsheetTimeZone()).create();
 }
 
 // ---------- helpers ----------

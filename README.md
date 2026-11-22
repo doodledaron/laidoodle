@@ -61,6 +61,9 @@ Changes show up on the site the next time someone loads the page. No redeploys.
 | `extra_questions` | extra questions just for this jam, one per line | `dietary needs?` |
 | `doodlers` | only for old jams from before sign-ups were in the sheet; otherwise leave it empty and it counts sign-ups | `9` |
 | `thumbnail` | the cover picture on the home page's upcoming list and past jams: one Drive image link (a folder link uses its first image). Optional: without it, upcoming jams show no picture and past jams use the first of `photos`. | |
+| `announced_at` | for your tracking only (the site ignores it): when you posted the jam. Lets the dashboard measure how fast it fills. | `2026-11-18 12:00` |
+| `cost_total` | for your tracking only: what the jam cost you in RM (venue, drinks, snacks, materials) | `240` |
+| `feedback_sheet` | for your tracking only: link to this jam's feedback form responses sheet. Once a day its answers are copied into the **Feedback** tab. | |
 | `map_area` | where the café is, for the home page's **where we've explored** map. Pick an area from the dropdown (e.g. `Bangsar`, `PJ`, `Shah Alam`), or type `lat, lng` for a spot that isn't listed. Approximate is fine: it's a doodle map. Empty = no pin. Past jams get an orange pin (joined by a dashed "journey" line); upcoming jams get a dashed "next stop" pin. | `Bangsar` |
 
 - **Photo folders:** just paste the folder link. The script switches each photo in it to *anyone with the link* so visitors can see it (your receipts folder is never touched). New photos you drop into a folder show up on the site within ~10 minutes.
@@ -73,6 +76,8 @@ Changes show up on the site the next time someone loads the page. No redeploys.
 A row is added for each person who signs up. For paid jams a receipt upload is required. It's saved in your receipts folder as **`event - name - date time`** (e.g. `Doodle Jam #05 - Ron - 2026-10-04 15.30.12.png`, same time as the `timestamp` column), and the `receipt` column links to it.
 
 - **Someone cancels:** set their `isCancelled? (Y/N)` cell to `Y` and the spot opens up again.
+- **`source`** is their answer to *"how did u find laidoodle?"* on the form: `@laidoodle_`, `@doodledaron`, `Threads`, `A friend`, or `Other: …`.
+- **`attended`:** after a jam, set `Y` for people who came and `N` for no-shows (pick from the dropdown). The dashboard uses it for the show-up rate.
 - You can add your own columns (e.g. `confirmed`, `notes to self`). The script only fills in its own columns and leaves yours alone.
 - Tip: **Data → Create a filter** on `event_id` shows one jam's list.
 
@@ -94,6 +99,15 @@ Every day around **10am** the script checks the jams. For a jam that's exactly 3
 - **Check it:** in Apps Script, run **`testReminder`**. It emails *you* a sample reminder for the next jam, marks nothing, and its log shows who the timer would remind today and whether the timer is on.
 - **Change the days:** Settings → `reminder_days` (e.g. `7,3,1`). `off` stops reminders.
 - The daily timer is started by `setup` (Apps Script → ⏰ Triggers shows it). It runs the latest **saved** code, so no redeploy is needed for reminders.
+
+### Feedback tab
+
+Keep making a Google Form per jam as usual. Paste the link to its **responses sheet** into that jam's `feedback_sheet` cell (Events). Every day around **11am** the script copies new answers into the **Feedback** tab, one row per answer, tagged with the jam's `event_id`. Each question gets its own column, so the same question across jams lines up.
+
+- Your forms and their response sheets are only read, never changed.
+- Answers are never copied twice (the `response_key` column remembers them).
+- **Run it now:** in Apps Script, run **`syncFeedback`**. The first time, Google asks for permission again, because the script now reads your feedback sheets too.
+- The daily timer is started by `setup`.
 
 ### Settings tab
 

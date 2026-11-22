@@ -20,7 +20,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,500;9..40,700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="../styles.css?v=202611181500">
+<link rel="stylesheet" href="../styles.css?v=202611221600">
 <script src="../data.js?v=202610250835"></script>
 </head>
 <body>
@@ -90,6 +90,19 @@
           <label class="choice"><input type="radio" name="joined_before" value="joined before">yes, been before!</label>
         </fieldset>
         <small class="err" id="joined-err">just pick one :)</small>
+        <div class="step__q" id="source-q">how did u find laidoodle?</div>
+        <fieldset class="choices choices--compact" aria-labelledby="source-q">
+          <label class="choice"><input type="radio" name="source" value="@laidoodle_" required>@laidoodle_ on IG</label>
+          <label class="choice"><input type="radio" name="source" value="@doodledaron">@doodledaron on IG</label>
+          <label class="choice"><input type="radio" name="source" value="Threads">threads</label>
+          <label class="choice"><input type="radio" name="source" value="A friend">a friend told me</label>
+          <label class="choice"><input type="radio" name="source" value="Other">somewhere else</label>
+        </fieldset>
+        <div class="field" id="source-other-field" hidden>
+          <label for="source-other">where? (optional)</label>
+          <input type="text" id="source-other" maxlength="80" placeholder="e.g. a poster at the café">
+        </div>
+        <small class="err" id="source-err">just pick one :)</small>
       </div>
       <div class="step__foot"><button type="button" class="pill pill--ink" data-next>next →</button></div>
     </section>
@@ -260,9 +273,11 @@
     if (name === 'doodly') {
       const ok = !!form.doodly.value;
       const joined = !!form.joined_before.value;
+      const source = !!form.source.value;
       document.getElementById('doodly-err').classList.toggle('is-shown', !ok);
       document.getElementById('joined-err').classList.toggle('is-shown', !joined);
-      return ok && joined;
+      document.getElementById('source-err').classList.toggle('is-shown', !source);
+      return ok && joined && source;
     }
     if (name === 'fee') {
       const ok = form.paid.checked;
@@ -290,6 +305,10 @@
   form.addEventListener('change', ev => {
     if (ev.target.name === 'doodly') document.getElementById('doodly-err').classList.remove('is-shown');
     if (ev.target.name === 'joined_before') document.getElementById('joined-err').classList.remove('is-shown');
+    if (ev.target.name === 'source') {
+      document.getElementById('source-err').classList.remove('is-shown');
+      document.getElementById('source-other-field').hidden = form.source.value !== 'Other';
+    }
     if (ev.target.name === 'paid') document.getElementById('paid-err').classList.remove('is-shown');
   });
 
@@ -376,6 +395,9 @@
         email: document.getElementById('email').value.trim(),
         doodly: form.doodly.value,
         joined_before: form.joined_before.value,
+        source: form.source.value === 'Other' && document.getElementById('source-other').value.trim()
+          ? 'Other: ' + document.getElementById('source-other').value.trim()
+          : form.source.value,
         paid: paid && form.paid.checked,
         notes: form.notes.value.trim(),
         extra: [...form.querySelectorAll('[data-question]')].map(t => ({ q: t.dataset.question, a: t.value.trim() })),
