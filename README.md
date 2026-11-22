@@ -76,7 +76,7 @@ Changes show up on the site the next time someone loads the page. No redeploys.
 A row is added for each person who signs up. For paid jams a receipt upload is required. It's saved in your receipts folder as **`event - name - date time`** (e.g. `Doodle Jam #05 - Ron - 2026-10-04 15.30.12.png`, same time as the `timestamp` column), and the `receipt` column links to it.
 
 - **Someone cancels:** set their `isCancelled? (Y/N)` cell to `Y` and the spot opens up again.
-- **`source`** is their answer to *"how did u find laidoodle?"* on the form: `@laidoodle_`, `@doodledaron`, `Threads`, `A friend`, or `Other: …`.
+- **`source`** is their answer to *"how did u find laidoodle?"* on the form: `@laidoodle_ IG`, `@doodledaron IG`, `@laidoodle_ Threads`, `@doodledaron Threads`, `A friend`, or `Other: …`.
 - **`attended`:** after a jam, set `Y` for people who came and `N` for no-shows (pick from the dropdown). The dashboard uses it for the show-up rate.
 - You can add your own columns (e.g. `confirmed`, `notes to self`). The script only fills in its own columns and leaves yours alone.
 - Tip: **Data → Create a filter** on `event_id` shows one jam's list.
