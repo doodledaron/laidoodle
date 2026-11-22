@@ -14,12 +14,17 @@
  * last 24 hours).
  */
 
-const STATS_ACCOUNTS = [
+// Threads is switched off for now: its accounts are skipped (and their Script Properties ignored)
+// until this is true.
+const SYNC_THREADS = false;
+
+const STATS_ACCOUNTS_ALL = [
   { account: '@laidoodle_ IG', prop: 'IG_LAIDOODLE_TOKEN', kind: 'ig' },
   { account: '@doodledaron IG', prop: 'IG_DOODLEDARON_TOKEN', kind: 'ig' },
   { account: '@laidoodle_ Threads', prop: 'THREADS_LAIDOODLE_TOKEN', kind: 'threads' },
   { account: '@doodledaron Threads', prop: 'THREADS_DOODLEDARON_TOKEN', kind: 'threads' },
 ];
+const STATS_ACCOUNTS = STATS_ACCOUNTS_ALL.filter(a => SYNC_THREADS || a.kind !== 'threads');
 
 // Posts tab columns. The sync fills the stats columns every time; it fills format and event_id only
 // when they're empty, and never touches hook, first_slide or notes.
@@ -253,7 +258,7 @@ function setupPosts_(ss) {
     sheet.getRange(2, c, sheet.getMaxRows() - 1, 1).setDataValidation(
       SpreadsheetApp.newDataValidation().requireValueInList(items, true).setAllowInvalid(true).build());
   };
-  list('account', STATS_ACCOUNTS.map(a => a.account));
+  list('account', STATS_ACCOUNTS_ALL.map(a => a.account));
   list('format', POST_FORMATS);
 }
 
@@ -301,6 +306,7 @@ function syncSocialFromMenu() {
 // Checks every token without writing anything. Run it from the editor after adding tokens.
 function testStats() {
   const props = PropertiesService.getScriptProperties();
+  if (!SYNC_THREADS) console.log('Threads is switched off (SYNC_THREADS = false), so only Instagram is checked.');
   STATS_ACCOUNTS.forEach(a => {
     const token = props.getProperty(a.prop);
     if (!token) { console.log(a.account + ': no token yet (Script Property ' + a.prop + ')'); return; }

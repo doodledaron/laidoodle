@@ -117,6 +117,7 @@ Keep making a Google Form per jam as usual. Paste the link to its **responses sh
 - Each sync refreshes the stats columns (`reach`, `views`, `likes`, `comments`, `saves`, `shares`, `reposts`, `follows`, `profile_visits`). It fills `format` and `event_id` only when they're empty (`event_id` = the next jam after the post's date; fix it if it's wrong), and never touches `hook`, `first_slide` or `notes`.
 - Threads has no reach, so `views` is the number to compare there. Threads reposts and quotes are added together in `reposts`.
 - Rows you add by hand (no `post_id`) are left alone.
+- **Threads is switched off for now** (`SYNC_THREADS = false` at the top of `Stats.gs`). Set it to `true` once the Threads tokens work.
 
 **One-time setup** (Meta's screens change now and then; ask Claude if a step looks different):
 
