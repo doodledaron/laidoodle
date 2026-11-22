@@ -94,6 +94,7 @@ function setup() {
   upgradeHeaders_(signups, SIGNUP_HEADERS, { status: CANCELLED_COL });
   yesNoColumn_(signups, 'is_cancelled');
   yesNoColumn_(signups, 'attended');
+  sourceColumn_(signups);
   signups.getRange('F:F').setNumberFormat('@'); // keep "+60…" phone numbers as text
 
   const settings = ensureSheet_(ss, 'Settings', ['key', 'value']);
@@ -162,6 +163,18 @@ function yesNoColumn_(sheet, key) {
   if (!col || sheet.getMaxRows() < 2) return;
   const rule = SpreadsheetApp.newDataValidation().requireValueInList(['Y', 'N'], true).setAllowInvalid(true)
     .setHelpText('Y = yes, N or empty = no').build();
+  sheet.getRange(2, col, sheet.getMaxRows() - 1, 1).setDataValidation(rule);
+}
+
+// Signups → source: the same choices as the sign-up form, plus "Personal invite" for people you add by hand.
+// The form saves "Other: …" with their own words, so other text is still allowed.
+const SOURCE_CHOICES = ['@laidoodle_ IG', '@doodledaron IG', '@laidoodle_ Threads', '@doodledaron Threads', 'A friend', 'Personal invite', 'Other'];
+function sourceColumn_(sheet) {
+  const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0].map(key_);
+  const col = headers.indexOf('source') + 1;
+  if (!col || sheet.getMaxRows() < 2) return;
+  const rule = SpreadsheetApp.newDataValidation().requireValueInList(SOURCE_CHOICES, true).setAllowInvalid(true)
+    .setHelpText('How they found laidoodle. The sign-up form fills this in; pick one for people you add by hand.').build();
   sheet.getRange(2, col, sheet.getMaxRows() - 1, 1).setDataValidation(rule);
 }
 
